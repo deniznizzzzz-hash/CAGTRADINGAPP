@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>C.A.G. Trading — Flight PDF → Excel</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>C.A.G. Trading</h1>
+    <p class="subtitle">Uçuş PDF'lerini Excel'e aktar</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>1. Döviz Kurları (Elle Gir)</h2>
+      <div class="rates-manual">
+        <div class="rate-field">
+          <label for="rateTRY">1 EUR =</label>
+          <input type="text" id="rateTRY" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="örn. 43.25">
+          <span>TRY</span>
+        </div>
+        <div class="rate-field">
+          <label for="rateGBP">1 EUR =</label>
+          <input type="text" id="rateGBP" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="örn. 0.8532">
+          <span>GBP</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2. Excel Modu</h2>
+      <div class="modes">
+        <label class="mode">
+          <input type="radio" name="mode" value="new" checked>
+          <div>
+            <strong>Yeni dosya oluştur</strong>
+            <div class="sub">
+              Ay:
+              <select id="monthSelect"></select>
+              Yıl:
+              <input type="number" id="yearInput" min="2020" max="2099" style="width:80px">
+            </div>
+          </div>
+        </label>
+        <label class="mode">
+          <input type="radio" name="mode" value="append">
+          <div>
+            <strong>Mevcut dosyaya ekle</strong>
+            <div class="sub">
+              <button id="pickExcelBtn" class="secondary small">Excel seç</button>
+              <span id="excelPath" class="muted">—</span>
+            </div>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>3. Çıktı Klasörü</h2>
+      <div class="row">
+        <button id="pickFolderBtn" class="secondary">Klasör Seç</button>
+        <span id="folderPath" class="muted">—</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>4. PDF'ler</h2>
+      <div id="dropzone" class="dropzone">
+        <div>PDF'leri buraya sürükleyip bırakın</div>
+        <div class="sub">veya</div>
+        <button id="pickPdfsBtn" class="secondary">PDF Seç</button>
+      </div>
+      <ul id="pdfList" class="pdflist"></ul>
+    </section>
+
+    <section class="card">
+      <h2>5. İşle</h2>
+      <div class="row">
+        <button id="processBtn" class="primary">Excel'e Aktar</button>
+        <span id="statusText" class="muted"></span>
+      </div>
+      <pre id="log" class="log" aria-live="polite"></pre>
+    </section>
+  </main>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
