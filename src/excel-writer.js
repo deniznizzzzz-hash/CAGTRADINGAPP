@@ -305,9 +305,9 @@ async function processBatch(payload) {
   const warnings = [];
 
   // Sort incoming bookings oldest → newest by ticket purchase date so rows
-  // (and #N numbering) go top-to-bottom in chronological order. Bookings
-  // without a purchase date sink to the bottom. Flights are written first
-  // (all of them), then trains — each with its own #N counter.
+  // go top-to-bottom in chronological order. Flights and trains interleave
+  // by date; each kind keeps its own #N counter (Flight #1,#2... and
+  // Train #1,#2... independent of position).
   const byPurchaseDate = (a, b) => {
     const ad = a.purchaseDate ? +new Date(a.purchaseDate) : null;
     const bd = b.purchaseDate ? +new Date(b.purchaseDate) : null;
@@ -316,9 +316,7 @@ async function processBatch(payload) {
     if (bd == null) return -1;
     return ad - bd;
   };
-  const flights = parsed.filter(b => b.type !== 'train').sort(byPurchaseDate);
-  const trains = parsed.filter(b => b.type === 'train').sort(byPurchaseDate);
-  const orderedParsed = [...flights, ...trains];
+  const orderedParsed = [...parsed].sort(byPurchaseDate);
 
   for (const booking of orderedParsed) {
     // Skip booking entirely if we have neither passengers nor legs.
