@@ -5,7 +5,10 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win --x64"
+    "dist": "electron-builder --win --x64",
+    "publish": "electron-builder --win --x64 --publish always",
+    "release:patch": "npm version patch -m \"v%s\" && npm run publish && git push --follow-tags",
+    "release:minor": "npm version minor -m \"v%s\" && npm run publish && git push --follow-tags"
   },
   "author": "C.A.G. Trading",
   "license": "UNLICENSED",
@@ -45,6 +48,11 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "C.A.G. Trading"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "deniznizzzzz-hash",
+      "repo": "CAGTRADINGAPP"
     }
   }
 }
