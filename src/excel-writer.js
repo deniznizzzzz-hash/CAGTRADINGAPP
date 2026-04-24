@@ -164,19 +164,25 @@ function thinBorder() {
   return { top: side, left: side, bottom: side, right: side };
 }
 
-// Read the "state" of a Flights sheet: next flight number and next write row,
-// also the existing TOTAL row (if any) — so we can overwrite the SUM in place.
+// Read the "state" of a Flights sheet: next flight/train numbers, next write
+// row, and existing TOTAL row (if any — so we can overwrite the SUM in place).
 function readFlightsState(ws) {
   let maxFlightNum = 0;
+  let maxTrainNum = 0;
   let lastDataRow = 2; // header row
   let totalRow = null;
   for (let r = 3; r <= ws.rowCount; r++) {
     const bookingVal = ws.getRow(r).getCell(1).value;
     const nameVal = ws.getRow(r).getCell(3).value;
     if (typeof bookingVal === 'string') {
-      const m = bookingVal.match(/Flight\s*#(\d+)/i);
-      if (m) {
-        maxFlightNum = Math.max(maxFlightNum, +m[1]);
+      const fm = bookingVal.match(/Flight\s*#(\d+)/i);
+      if (fm) {
+        maxFlightNum = Math.max(maxFlightNum, +fm[1]);
+        lastDataRow = r;
+      }
+      const tm = bookingVal.match(/Train\s*#(\d+)/i);
+      if (tm) {
+        maxTrainNum = Math.max(maxTrainNum, +tm[1]);
         lastDataRow = r;
       }
     }
@@ -186,7 +192,7 @@ function readFlightsState(ws) {
       if (iVal === 'TOTAL') totalRow = r;
     }
   }
-  return { maxFlightNum, lastDataRow, totalRow };
+  return { maxFlightNum, maxTrainNum, lastDataRow, totalRow };
 }
 
 // Style a data cell like the sample. Always writes an explicit numFmt
@@ -289,24 +295,32 @@ async function processBatch(payload) {
     writeRow = state.totalRow; // overwrite TOTAL row position; we'll move it later
   }
 
-  let nextFlightNum = state.maxFlightNum + 1;
+  const counters = {
+    flight: state.maxFlightNum + 1,
+    train: state.maxTrainNum + 1
+  };
+  const labels = { flight: 'Flight', train: 'Train' };
   const renamedPdfs = [];
   let rowsAdded = 0;
   const warnings = [];
 
-  // Sort incoming bookings oldest → newest by ticket purchase date so the
-  // rows (and Flight #N numbering) go from top to bottom in chronological
-  // order. Bookings without a purchase date sink to the bottom.
-  const sortedParsed = parsed.slice().sort((a, b) => {
+  // Sort incoming bookings oldest → newest by ticket purchase date so rows
+  // (and #N numbering) go top-to-bottom in chronological order. Bookings
+  // without a purchase date sink to the bottom. Flights are written first
+  // (all of them), then trains — each with its own #N counter.
+  const byPurchaseDate = (a, b) => {
     const ad = a.purchaseDate ? +new Date(a.purchaseDate) : null;
     const bd = b.purchaseDate ? +new Date(b.purchaseDate) : null;
     if (ad == null && bd == null) return 0;
     if (ad == null) return 1;
     if (bd == null) return -1;
     return ad - bd;
-  });
+  };
+  const flights = parsed.filter(b => b.type !== 'train').sort(byPurchaseDate);
+  const trains = parsed.filter(b => b.type === 'train').sort(byPurchaseDate);
+  const orderedParsed = [...flights, ...trains];
 
-  for (const booking of sortedParsed) {
+  for (const booking of orderedParsed) {
     // Skip booking entirely if we have neither passengers nor legs.
     if (!booking.passengers.length && !booking.legs.length) {
       warnings.push(
@@ -314,11 +328,13 @@ async function processBatch(payload) {
       );
       continue;
     }
-    const firstFlightNum = nextFlightNum;
+    const kind = booking.type === 'train' ? 'train' : 'flight';
+    const label = labels[kind];
+    const firstNum = counters[kind];
     for (const leg of booking.legs.length ? booking.legs : [null]) {
       for (const pax of booking.passengers.length ? booking.passengers : ['']) {
         const row = ws.getRow(writeRow);
-        row.getCell(1).value = `Flight #${nextFlightNum}`;
+        row.getCell(1).value = `${label} #${counters[kind]}`;
         styleDataCell(row.getCell(1));
         // purchase date
         row.getCell(2).value = booking.purchaseDate || null;
@@ -362,18 +378,18 @@ async function processBatch(payload) {
         row.commit?.();
 
         writeRow++;
-        nextFlightNum++;
+        counters[kind]++;
         rowsAdded++;
       }
     }
-    const lastFlightNum = nextFlightNum - 1;
+    const lastNum = counters[kind] - 1;
 
     // Rename/copy the source PDF into the output folder
     const srcPdf = booking.filePath;
     const base =
-      firstFlightNum === lastFlightNum
-        ? `Flight #${firstFlightNum} (${monthLabel}).pdf`
-        : `Flight #${firstFlightNum}-${lastFlightNum} (${monthLabel}).pdf`;
+      firstNum === lastNum
+        ? `${label} #${firstNum} (${monthLabel}).pdf`
+        : `${label} #${firstNum}-${lastNum} (${monthLabel}).pdf`;
     const destPdf = uniquePath(path.join(outputFolder, base));
     try {
       fs.copyFileSync(srcPdf, destPdf);

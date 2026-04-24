@@ -1670,6 +1670,117 @@ function extractSunExpress(text) {
   return out;
 }
 
+// Eurostar train booking/ticket PDF. The file is usually a "merged" PDF from
+// the user combining: outbound ticket page + inbound ticket page + the final
+// booking confirmation (with PNR + total). A single-leg booking has only one
+// ticket page. Each "Your Eurostar ticket" block becomes one leg.
+function extractEurostar(text) {
+  const out = {
+    type: 'train',
+    pnr: null,
+    purchaseDate: null,
+    passengers: [],
+    legs: [],
+    totalAmount: null,
+    currency: null
+  };
+
+  // PNR: "BOOKING REFERENCE / PNR\nQHVPDV" on ticket pages, or
+  // "Booking reference QHVPDV" on the confirmation page.
+  const pnrM =
+    text.match(/BOOKING\s+REFERENCE\s*\/\s*PNR\s*[\r\n]+\s*([A-Z0-9]{5,8})/i) ||
+    text.match(/Booking\s+reference\s+([A-Z0-9]{5,8})\b/i);
+  if (pnrM) out.pnr = pnrM[1];
+
+  // Purchase date — "Ticket issued on 15/04/26 - 19:44" (ticket page).
+  const issueM = text.match(/Ticket\s+issued\s+on\s+(\d{1,2})\/(\d{1,2})\/(\d{2,4})/i);
+  if (issueM) {
+    const yy = +issueM[3];
+    const year = yy < 100 ? 2000 + yy : yy;
+    out.purchaseDate = new Date(Date.UTC(year, +issueM[2] - 1, +issueM[1]));
+  }
+
+  // Total — confirmation page has "Total€538.00" after the payment line.
+  // Fall back to "Card ending NNNN€538.00".
+  {
+    const re = /\bTotal\s*([€£$₺]|EUR|GBP|USD|TRY)\s*([\d.,]+)/gi;
+    let m, last = null;
+    while ((m = re.exec(text)) !== null) last = m;
+    if (last) {
+      out.totalAmount = parseMoney(last[2]);
+      out.currency = detectCurrency(last[1]);
+    } else {
+      const pay = text.match(/Card\s+ending\s+\d+\s*([€£$₺]|EUR|GBP|USD|TRY)\s*([\d.,]+)/i);
+      if (pay) {
+        out.totalAmount = parseMoney(pay[2]);
+        out.currency = detectCurrency(pay[1]);
+      }
+    }
+  }
+
+  // Split into ticket blocks. Each ticket page starts with "Your Eurostar
+  // ticket" (sometimes preceded by "\n"). The confirmation page uses
+  // "Booking confirmation" as its header.
+  const ticketRe = /Your\s+Eurostar\s+ticket[\s\S]*?(?=Your\s+Eurostar\s+ticket|Booking\s+confirmation|$)/gi;
+  const seenPax = new Set();
+  let tm;
+  while ((tm = ticketRe.exec(text)) !== null) {
+    const block = tm[0];
+
+    const paxM = block.match(/PASSENGER\s*[\r\n]+\s*([^\r\n]+?)\s*[\r\n]/);
+    if (paxM) {
+      const name = paxM[1].trim();
+      if (name && !seenPax.has(name)) {
+        seenPax.add(name);
+        out.passengers.push(name);
+      }
+    }
+
+    // "Monday, 27 Apr 2026"
+    let date = null;
+    const dateM = block.match(/TRAVEL\s+DATE\s*[\r\n]+\s*[A-Za-z]+,\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
+    if (dateM) {
+      const mon = MONTH_MAP[dateM[2].toLowerCase()];
+      if (mon != null) date = new Date(Date.UTC(+dateM[3], mon, +dateM[1]));
+    }
+
+    const fromM = block.match(/\bFROM\s*[\r\n]+\s*([^\r\n]+)/);
+    const toM = block.match(/\bTO\s*[\r\n]+\s*([^\r\n]+)/);
+    const dep = fromM ? cleanEurostarStation(fromM[1]) : null;
+    const arr = toM ? cleanEurostarStation(toM[1]) : null;
+
+    let depTime = null;
+    const depTimeM = block.match(/DEPARTING\s*[\r\n]+\s*(\d{1,2}:\d{2})/);
+    if (depTimeM) depTime = depTimeM[1];
+
+    let trainNum = '';
+    const trainM = block.match(/TRAIN\s+NUMBER\s*[\r\n]+\s*(\d+)/);
+    if (trainM) trainNum = trainM[1];
+
+    if (dep && arr) {
+      out.legs.push({
+        flightNumber: trainNum || null,
+        airline: 'Eurostar',
+        departureDate: date,
+        departureTime: decimalTime(depTime),
+        departureAirport: dep,
+        arrivalAirport: arr
+      });
+    }
+  }
+
+  return out;
+}
+
+// "Brussels Midi / Zuid" → "Brussels Midi"; "London St Pancras Int'l" → "London St Pancras"
+function cleanEurostarStation(s) {
+  return s
+    .replace(/\s*\/.*$/, '')
+    .replace(/\s+Int'?l\.?$/i, '')
+    .replace(/\s+International$/i, '')
+    .trim();
+}
+
 function collapseConnections(legs) {
   if (!Array.isArray(legs) || legs.length < 2) return legs;
   const merged = [];
@@ -1877,9 +1988,14 @@ async function parsePdf(buffer, filePath) {
   const isKiwiTicket =
     /kiwi\.com/i.test(text)
     && /Uçuş no:/i.test(text);
+  // Eurostar train ticket (single or merged Outbound+Inbound+confirmation).
+  const isEurostar =
+    /\bEurostar\b/i.test(text)
+    && /TRAIN\s+NUMBER/i.test(text);
 
   let parsed;
-  if (isKLMInvoice) parsed = extractKLMInvoice(text);
+  if (isEurostar) parsed = extractEurostar(text);
+  else if (isKLMInvoice) parsed = extractKLMInvoice(text);
   else if (isPegasusSales) parsed = extractPegasusSales(text);
   else if (isBrusselsAirlinesETicket) parsed = extractBrusselsAirlinesETicket(text);
   else if (isBrusselsAirlines) parsed = extractBrusselsAirlines(text);
@@ -1894,6 +2010,7 @@ async function parsePdf(buffer, filePath) {
   else if (isSunExpress) parsed = extractSunExpress(text);
   else if (isKiwiTicket) parsed = extractKiwiTicket(text);
   else parsed = extractAJet(text, visibleText);
+  if (!parsed.type) parsed.type = 'flight';
   // Collapse same-day chained legs (transfers) into single logical flights.
   parsed.legs = collapseConnections(parsed.legs);
   return {
