@@ -1534,6 +1534,27 @@ function extractKiwiTicket(raw) {
     });
   }
 
+  // Merged Kiwi invoice — when the user concatenates the e-ticket with the
+  // English Kiwi.com tax invoice, the invoice block carries price + purchase
+  // date that the ticket alone doesn't have.
+  if (/\bINVOICE\b/.test(text) && /Kiwi\.com\s+s\.r\.o\./i.test(text)) {
+    // "Issue Date2026-04-09" → purchase date
+    const dateM = text.match(/Issue\s*Date\s*(\d{4})-(\d{2})-(\d{2})/i);
+    if (dateM) {
+      out.purchaseDate = new Date(Date.UTC(+dateM[1], +dateM[2] - 1, +dateM[3]));
+    }
+
+    // Final "Total" line — e.g. "TotalTRY 28843.96". Picks the LAST Total in
+    // the document (after Subtotal/Tax) to avoid the per-item price above.
+    const totalRe = /\bTotal\s*(TRY|TL|GBP|EUR|USD|[₺£€$])\s*([\d.,]+)/gi;
+    let tm, lastTotal = null;
+    while ((tm = totalRe.exec(text)) !== null) lastTotal = tm;
+    if (lastTotal) {
+      out.totalAmount = parseMoney(lastTotal[2]);
+      out.currency = detectCurrency(lastTotal[1]);
+    }
+  }
+
   return out;
 }
 

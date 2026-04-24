@@ -8,5 +8,8 @@ contextBridge.exposeInMainWorld('api', {
   parsePdf: (p) => ipcRenderer.invoke('parse-pdf', p),
   processBatch: (payload) => ipcRenderer.invoke('process-batch', payload),
   openPath: (p) => ipcRenderer.invoke('open-path', p),
-  showItem: (p) => ipcRenderer.invoke('show-item', p)
+  showItem: (p) => ipcRenderer.invoke('show-item', p),
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  installUpdate: (args) => ipcRenderer.invoke('install-update', args),
+  onUpdateProgress: (cb) => ipcRenderer.on('update-download-progress', (_e, d) => cb(d))
 });

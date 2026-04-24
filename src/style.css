@@ -10,6 +10,19 @@ header {
   padding: 18px 28px 8px;
   border-bottom: 1px solid #1f232c;
 }
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.updater {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.updater .muted { font-size: 12px; }
 header h1 {
   margin: 0;
   font-size: 20px;

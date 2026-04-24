@@ -232,3 +232,58 @@ $('processBtn').onclick = async () => {
 
 initMonthYear();
 initRates();
+
+// ---- Updater
+(function initUpdater() {
+  const btn = $('checkUpdateBtn');
+  const status = $('updateStatus');
+  if (!btn || !status) return;
+
+  let pendingUpdate = null; // { downloadUrl, assetName, latestVersion }
+
+  btn.onclick = async () => {
+    if (pendingUpdate) {
+      // Second click → install
+      btn.disabled = true;
+      status.textContent = 'İndiriliyor… 0%';
+      window.api.onUpdateProgress(({ downloaded, total }) => {
+        const pct = total > 0 ? Math.floor((downloaded / total) * 100) : 0;
+        status.textContent = `İndiriliyor… ${pct}%`;
+      });
+      const res = await window.api.installUpdate(pendingUpdate);
+      if (!res.ok) {
+        status.textContent = 'Hata: ' + res.error;
+        btn.disabled = false;
+      } else {
+        status.textContent = 'Kurulum başlatıldı, uygulama kapanıyor…';
+      }
+      return;
+    }
+
+    btn.disabled = true;
+    status.textContent = 'Kontrol ediliyor…';
+    const res = await window.api.checkForUpdates();
+    btn.disabled = false;
+    if (!res.ok) {
+      status.textContent = 'Kontrol edilemedi: ' + res.error;
+      return;
+    }
+    if (!res.hasUpdate) {
+      status.textContent = `Güncel (v${res.currentVersion}).`;
+      return;
+    }
+    if (!res.downloadUrl) {
+      status.textContent = `v${res.latestVersion} mevcut ama indirme dosyası yok.`;
+      return;
+    }
+    pendingUpdate = {
+      downloadUrl: res.downloadUrl,
+      assetName: res.assetName,
+      latestVersion: res.latestVersion
+    };
+    status.textContent = `v${res.latestVersion} mevcut. Kurmak için tekrar tıkla.`;
+    btn.textContent = 'Güncellemeyi Kur';
+    btn.classList.add('primary');
+    btn.classList.remove('secondary');
+  };
+})();
