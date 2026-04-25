@@ -6,6 +6,9 @@ const https = require('https');
 const { parsePdf } = require('./src/pdf-parser');
 const { processBatch } = require('./src/excel-writer');
 const { fetchRates } = require('./src/fx');
+const { parseStatementPdf } = require('./src/statement-parser');
+const { matchTicketsToStatement } = require('./src/statement-matcher');
+const { writeStatementReport } = require('./src/statement-report-writer');
 
 const GITHUB_OWNER = 'deniznizzzzz-hash';
 const GITHUB_REPO = 'CAGTRADINGAPP';
@@ -89,6 +92,96 @@ ipcMain.handle('open-path', async (_evt, p) => {
 
 ipcMain.handle('show-item', async (_evt, p) => {
   shell.showItemInFolder(p);
+});
+
+// ---- Statement control ----
+
+ipcMain.handle('parse-statement-pdf', async (_evt, filePath) => {
+  const buf = fs.readFileSync(filePath);
+  return await parseStatementPdf(buf, filePath);
+});
+
+ipcMain.handle('run-statement-check', async (_evt, payload) => {
+  // payload: { statementPdfs, ticketPdfs, outputFolder, outputName? }
+  // No FX conversion — matcher only compares same-currency amounts (ticket vs
+  // txn.amount, or ticket vs txn.foreignAmount when the bank already converted).
+  const { statementPdfs, ticketPdfs, outputFolder, outputName } = payload;
+  if (!outputFolder) throw new Error('outputFolder is required');
+
+  // Parse all statements, merge their transactions
+  const banks = new Set();
+  const allTxns = [];
+  let periodFrom = null, periodTo = null;
+  for (const p of statementPdfs) {
+    const buf = fs.readFileSync(p);
+    const s = await parseStatementPdf(buf, p);
+    if (s.bank === 'unknown') {
+      return { ok: false, error: `Unrecognised statement format: ${path.basename(p)}` };
+    }
+    banks.add(s.bank);
+    for (const t of s.transactions) allTxns.push(t);
+    if (s.statementPeriod) {
+      if (s.statementPeriod.from && (!periodFrom || s.statementPeriod.from < periodFrom)) periodFrom = s.statementPeriod.from;
+      if (s.statementPeriod.to && (!periodTo || s.statementPeriod.to > periodTo)) periodTo = s.statementPeriod.to;
+    }
+  }
+
+  // Parse all tickets
+  const tickets = [];
+  const parseWarnings = [];
+  let skippedTryCount = 0;
+  for (const p of ticketPdfs) {
+    try {
+      const buf = fs.readFileSync(p);
+      const parsed = await parsePdf(buf, p);
+      if (parsed && (parsed.legs?.length || parsed.passengers?.length)) {
+        // TRY tickets are paid via a different channel and never appear on the
+        // EUR/GBP statements — silently skip them (don't show as unmatched).
+        if (parsed.currency === 'TRY') {
+          skippedTryCount++;
+          continue;
+        }
+        tickets.push(parsed);
+      } else {
+        parseWarnings.push(`${path.basename(p)}: ticket could not be parsed.`);
+      }
+    } catch (e) {
+      parseWarnings.push(`${path.basename(p)}: ${e.message}`);
+    }
+  }
+
+  const results = matchTicketsToStatement(tickets, allTxns);
+
+  const fmt = (d) => d ? `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}` : '';
+  const periodLabel = (periodFrom || periodTo)
+    ? `${fmt(periodFrom)} → ${fmt(periodTo)}`
+    : '';
+
+  const excelPath = await writeStatementReport({
+    outputFolder,
+    outputName,
+    results,
+    statementMeta: {
+      banks: Array.from(banks),
+      periodLabel,
+      statementCount: statementPdfs.length,
+      ticketCount: ticketPdfs.length
+    }
+  });
+
+  return {
+    ok: true,
+    excelPath,
+    summary: {
+      matched: results.matches.length,
+      unmatchedTickets: results.unmatchedTickets.length,
+      unmatchedTxns: results.unmatchedTxns.length,
+      skippedTry: skippedTryCount,
+      banks: Array.from(banks),
+      periodLabel
+    },
+    warnings: parseWarnings
+  };
 });
 
 // ---- Updater ----
@@ -189,7 +282,7 @@ ipcMain.handle('check-for-updates', async () => {
 
 ipcMain.handle('install-update', async (_evt, { downloadUrl, assetName }) => {
   try {
-    if (!downloadUrl) throw new Error('İndirme bağlantısı yok.');
+    if (!downloadUrl) throw new Error('No download URL.');
     const safeName = (assetName || 'CAGTrading-update.exe').replace(/[^\w.\- ()]/g, '_');
     const destPath = path.join(os.tmpdir(), safeName);
     await downloadToFile(downloadUrl, destPath, (d, t) => {

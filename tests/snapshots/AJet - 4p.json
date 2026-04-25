@@ -1,0 +1,28 @@
+{
+  "currency": "TRY",
+  "legs": [
+    {
+      "airline": "Ajet",
+      "arrivalAirport": "Brussels",
+      "departureAirport": "Sabiha Gokcen",
+      "departureDate": {
+        "__date": "2026-04-13T00:00:00.000Z"
+      },
+      "departureTime": 13.35,
+      "flightNumber": "VF67"
+    }
+  ],
+  "passengers": [
+    "Zihni Sinan Karabulut",
+    "Muhammet Mustafa Gökkaya",
+    "Yavuz Keskin",
+    "Buğra Unutulmazsoy"
+  ],
+  "perPassengerAmount": 8525.87,
+  "pnr": "429M9N",
+  "purchaseDate": {
+    "__date": "2026-04-09T00:00:00.000Z"
+  },
+  "totalAmount": 34103.48,
+  "type": "flight"
+}

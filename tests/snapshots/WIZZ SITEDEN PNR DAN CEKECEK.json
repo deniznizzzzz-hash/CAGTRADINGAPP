@@ -1,0 +1,25 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "Wizzair",
+      "arrivalAirport": "Iasi",
+      "departureAirport": "Charleroi",
+      "departureDate": {
+        "__date": "2026-02-06T00:00:00.000Z"
+      },
+      "departureTime": null,
+      "flightNumber": null
+    }
+  ],
+  "passengers": [
+    ""
+  ],
+  "perPassengerAmount": 758.49,
+  "pnr": "PHVM6V",
+  "purchaseDate": {
+    "__date": "2026-02-09T00:00:00.000Z"
+  },
+  "totalAmount": 758.49,
+  "type": "flight"
+}

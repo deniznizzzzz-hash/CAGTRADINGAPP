@@ -1,0 +1,26 @@
+{
+  "currency": "GBP",
+  "legs": [
+    {
+      "airline": "Pegasus",
+      "arrivalAirport": "Eindhoven",
+      "departureAirport": "Sabiha Gokcen",
+      "departureDate": {
+        "__date": "2026-03-12T00:00:00.000Z"
+      },
+      "departureTime": 9.45,
+      "flightNumber": "PC1265"
+    }
+  ],
+  "passengers": [
+    "Ali Yaman",
+    "Mustafa Yusan"
+  ],
+  "perPassengerAmount": 77,
+  "pnr": null,
+  "purchaseDate": {
+    "__date": "2026-03-06T00:00:00.000Z"
+  },
+  "totalAmount": 154,
+  "type": "flight"
+}

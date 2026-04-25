@@ -1,0 +1,25 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "Ajet",
+      "arrivalAirport": "Sabiha Gokcen",
+      "departureAirport": "Brussels",
+      "departureDate": {
+        "__date": "2026-04-07T00:00:00.000Z"
+      },
+      "departureTime": 12.15,
+      "flightNumber": "VF66"
+    }
+  ],
+  "passengers": [
+    "Tugba Akkoc"
+  ],
+  "perPassengerAmount": 180.61,
+  "pnr": "418HSE",
+  "purchaseDate": {
+    "__date": "2026-04-01T00:00:00.000Z"
+  },
+  "totalAmount": 180.61,
+  "type": "flight"
+}

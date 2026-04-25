@@ -1,0 +1,35 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "Brussels Airlines",
+      "arrivalAirport": "Bologna",
+      "departureAirport": "Brussels",
+      "departureDate": {
+        "__date": "2026-01-07T00:00:00.000Z"
+      },
+      "departureTime": 15.2,
+      "flightNumber": "SN3125"
+    },
+    {
+      "airline": "Brussels Airlines",
+      "arrivalAirport": "Brussels",
+      "departureAirport": "Bologna",
+      "departureDate": {
+        "__date": "2026-01-09T00:00:00.000Z"
+      },
+      "departureTime": 17.5,
+      "flightNumber": "SN3126"
+    }
+  ],
+  "passengers": [
+    "Bayram Kuscu"
+  ],
+  "perPassengerAmount": 337.89,
+  "pnr": "88YVT3",
+  "purchaseDate": {
+    "__date": "2025-12-31T00:00:00.000Z"
+  },
+  "totalAmount": 337.89,
+  "type": "flight"
+}

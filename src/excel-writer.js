@@ -13,7 +13,7 @@ const MONTH_SHORT_EN = [
 ];
 
 const EUR_FORMAT =
-  '_-[$€-2] * #,##0.0_-;-[$€-2] * #,##0.0_-;_-[$€-2] * "-"??_-;_-@_-';
+  '_-[$€-2] * #,##0.##_-;-[$€-2] * #,##0.##_-;_-[$€-2] * "-"??_-;_-@_-';
 const DATE_FORMAT = 'dd/mm/yy';
 const TIME_FORMAT = '@'; // text — we write "HH:MM" strings
 
@@ -24,11 +24,12 @@ function decimalToHhmm(d) {
   return `${hStr.padStart(2, '0')}:${mStr}`;
 }
 
-// Always round UP to 1 decimal (e.g. 29.01 → 29.1, 12.66 → 12.7).
-// Epsilon guards against float artifacts like 29.3 * 10 = 293.00000000000006.
+// Always round UP to 2 decimals (e.g. 12.666 → 12.67, 28.43296 → 28.44).
+// Values already with ≤ 2 decimals are unchanged (12.5 → 12.5, 12.66 → 12.66).
+// Epsilon guards against float artifacts like 29.3 * 100 = 2930.0000000000005.
 function ceilTo1Decimal(x) {
   if (x == null) return null;
-  return Math.ceil(x * 10 - 1e-6) / 10;
+  return Math.ceil(x * 100 - 1e-6) / 100;
 }
 
 // Build a fresh "Flight Table" workbook matching the sample layout.
@@ -322,7 +323,7 @@ async function processBatch(payload) {
     // Skip booking entirely if we have neither passengers nor legs.
     if (!booking.passengers.length && !booking.legs.length) {
       warnings.push(
-        `${path.basename(booking.filePath)}: parse edilemedi (yolcu/uçuş bulunamadı), atlandı.`
+        `${path.basename(booking.filePath)}: could not be parsed (no passengers/flights), skipped.`
       );
       continue;
     }

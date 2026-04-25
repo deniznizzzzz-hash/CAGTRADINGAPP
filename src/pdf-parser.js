@@ -1032,9 +1032,13 @@ function extractEasyJetPayment(text) {
     currency: null
   };
 
-  // PNR + issue date
+  // PNR + Issue Date (fallback only — actual purchase date comes from the
+  // "Booking Date" column on the flight row, which we capture below).
+  // Header columns are concatenated without spaces in the PDF
+  // ("Booking ReferenceKBVSBMKIssue Date20/01/2026"), so use \s* between
+  // labels and values.
   {
-    const m = text.match(/Booking Reference\s+([A-Z0-9]+)\s+Issue Date\s+(\d{2})\/(\d{2})\/(\d{4})/i);
+    const m = text.match(/Booking Reference\s*([A-Z0-9]+)\s*Issue Date\s*(\d{2})\/(\d{2})\/(\d{4})/i);
     if (m) {
       out.pnr = m[1];
       out.purchaseDate = new Date(Date.UTC(+m[4], +m[3] - 1, +m[2]));
@@ -1045,7 +1049,9 @@ function extractEasyJetPayment(text) {
   // anonymous passengers so the per-row amount divides correctly.
   let paxCount = 1;
 
-  // Flights
+  // Flights — first DD/MM/YYYY on each row is the BOOKING date (when the
+  // ticket was purchased), the second is the FLIGHT date.
+  let firstBookingDate = null;
   {
     const re = /(\d{2})\/(\d{2})\/(\d{4})\s+([A-Za-z][^\n]*?)\s+to\s*\n?\s*([A-Za-z][^\n]*?)\s+([A-Z]{2,3})(\d{2,5})\s+(\d{2})\/(\d{2})\/(\d{4})[\s\S]{0,80}?(\d{1,2})\s+Segment/g;
     let m;
@@ -1059,9 +1065,14 @@ function extractEasyJetPayment(text) {
         departureAirport: cleanAirport(m[4]),
         arrivalAirport: cleanAirport(m[5])
       });
+      if (!firstBookingDate) {
+        firstBookingDate = new Date(Date.UTC(+m[3], +m[2] - 1, +m[1]));
+      }
       paxCount = Math.max(paxCount, +m[11]);
     }
   }
+  // Booking Date wins over Issue Date — that's the day the ticket was paid.
+  if (firstBookingDate) out.purchaseDate = firstBookingDate;
   // Anonymous passenger slots — empty strings so user can fill names later.
   out.passengers = Array.from({ length: paxCount }, () => '');
 

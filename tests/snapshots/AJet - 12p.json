@@ -1,0 +1,32 @@
+{
+  "currency": "TRY",
+  "legs": [
+    {
+      "airline": "Ajet",
+      "arrivalAirport": "Sabiha Gokcen",
+      "departureAirport": "Brussels",
+      "departureDate": {
+        "__date": "2026-04-07T00:00:00.000Z"
+      },
+      "departureTime": 12.15,
+      "flightNumber": "VF66"
+    }
+  ],
+  "passengers": [
+    "Kaspars Steins",
+    "Yasin Altindal",
+    "Adem Ozdemir",
+    "Kofi Sampah Peprah",
+    "Veysel Cilsal",
+    "Sefa Arikan",
+    "Sinan Turan",
+    "Gianni Van Staay"
+  ],
+  "perPassengerAmount": 7749.72,
+  "pnr": "417FPM",
+  "purchaseDate": {
+    "__date": "2026-03-31T00:00:00.000Z"
+  },
+  "totalAmount": 61997.76,
+  "type": "flight"
+}

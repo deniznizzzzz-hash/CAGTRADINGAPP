@@ -1,0 +1,25 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "THY",
+      "arrivalAirport": "Dusseldorf",
+      "departureAirport": "Ankara",
+      "departureDate": {
+        "__date": "2026-01-13T00:00:00.000Z"
+      },
+      "departureTime": 15.55,
+      "flightNumber": "TK2155 / TK1529"
+    }
+  ],
+  "passengers": [
+    "Mustafatanzer Ergul"
+  ],
+  "perPassengerAmount": 769.63,
+  "pnr": "2352289103715",
+  "purchaseDate": {
+    "__date": "2026-01-13T00:00:00.000Z"
+  },
+  "totalAmount": 769.63,
+  "type": "flight"
+}

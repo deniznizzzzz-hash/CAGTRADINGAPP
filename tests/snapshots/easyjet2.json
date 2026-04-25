@@ -1,0 +1,25 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "easyJet",
+      "arrivalAirport": "Milan Linate",
+      "departureAirport": "",
+      "departureDate": {
+        "__date": "2026-02-23T00:00:00.000Z"
+      },
+      "departureTime": null,
+      "flightNumber": null
+    }
+  ],
+  "passengers": [
+    ""
+  ],
+  "perPassengerAmount": 2968.47,
+  "pnr": "KC4KK8K",
+  "purchaseDate": {
+    "__date": "2026-02-16T00:00:00.000Z"
+  },
+  "totalAmount": 2968.47,
+  "type": "flight"
+}

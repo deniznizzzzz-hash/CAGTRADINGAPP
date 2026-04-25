@@ -1,0 +1,35 @@
+{
+  "currency": "GBP",
+  "legs": [
+    {
+      "airline": "SunExpress",
+      "arrivalAirport": "Eskisehir",
+      "departureAirport": "Brussels",
+      "departureDate": {
+        "__date": "2026-04-17T00:00:00.000Z"
+      },
+      "departureTime": 8.2,
+      "flightNumber": "XQ1457"
+    },
+    {
+      "airline": "SunExpress",
+      "arrivalAirport": "Brussels",
+      "departureAirport": "Eskisehir",
+      "departureDate": {
+        "__date": "2026-04-26T00:00:00.000Z"
+      },
+      "departureTime": 13.55,
+      "flightNumber": "XQ1456"
+    }
+  ],
+  "passengers": [
+    "Serkan Aydogdu"
+  ],
+  "perPassengerAmount": 313.06,
+  "pnr": "WV544A",
+  "purchaseDate": {
+    "__date": "2026-04-13T00:00:00.000Z"
+  },
+  "totalAmount": 313.06,
+  "type": "flight"
+}

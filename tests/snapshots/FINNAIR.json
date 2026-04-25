@@ -1,0 +1,35 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "Finnair",
+      "arrivalAirport": "Helsinki",
+      "departureAirport": "Brussels",
+      "departureDate": {
+        "__date": "2025-12-08T00:00:00.000Z"
+      },
+      "departureTime": 11.15,
+      "flightNumber": "AY1542"
+    },
+    {
+      "airline": "Finnair",
+      "arrivalAirport": "Brussels",
+      "departureAirport": "Helsinki",
+      "departureDate": {
+        "__date": "2025-12-10T00:00:00.000Z"
+      },
+      "departureTime": 20.5,
+      "flightNumber": "AY1549"
+    }
+  ],
+  "passengers": [
+    "Jordi Leijssen"
+  ],
+  "perPassengerAmount": 457.2,
+  "pnr": "8W8TPB",
+  "purchaseDate": {
+    "__date": "2025-12-02T00:00:00.000Z"
+  },
+  "totalAmount": 457.2,
+  "type": "flight"
+}

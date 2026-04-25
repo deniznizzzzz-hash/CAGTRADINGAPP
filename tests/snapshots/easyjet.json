@@ -1,0 +1,37 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "easyJet",
+      "arrivalAirport": "Milan Linate",
+      "departureAirport": "Brussels International",
+      "departureDate": {
+        "__date": "2026-01-21T00:00:00.000Z"
+      },
+      "departureTime": null,
+      "flightNumber": "EJU1960"
+    },
+    {
+      "airline": "easyJet",
+      "arrivalAirport": "Brussels International",
+      "departureAirport": "Milan Linate",
+      "departureDate": {
+        "__date": "2026-01-23T00:00:00.000Z"
+      },
+      "departureTime": null,
+      "flightNumber": "EJU1961"
+    }
+  ],
+  "passengers": [
+    "",
+    "",
+    ""
+  ],
+  "perPassengerAmount": 258.94,
+  "pnr": "KBVSBMK",
+  "purchaseDate": {
+    "__date": "2026-01-13T00:00:00.000Z"
+  },
+  "totalAmount": 776.82,
+  "type": "flight"
+}

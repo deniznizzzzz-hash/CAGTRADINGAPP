@@ -1,0 +1,43 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "Brussels Airlines",
+      "arrivalAirport": "Lyon",
+      "departureAirport": "Brussels",
+      "departureDate": {
+        "__date": "2026-03-30T00:00:00.000Z"
+      },
+      "departureTime": 11,
+      "flightNumber": "SN3587"
+    },
+    {
+      "airline": "Brussels Airlines",
+      "arrivalAirport": "Brussels",
+      "departureAirport": "Lyon",
+      "departureDate": {
+        "__date": "2026-04-03T00:00:00.000Z"
+      },
+      "departureTime": 13.1,
+      "flightNumber": "SN3588"
+    }
+  ],
+  "passengers": [
+    "Cody Luyckx",
+    "Jelle Taelemans",
+    "Emin Saciri",
+    "Jens Achten",
+    "Abdelaziz El Ayyadi",
+    "Jo Willems",
+    "Pieter Verkuringen",
+    "Cem Ozan Karakan",
+    "Kevin Houben"
+  ],
+  "perPassengerAmount": 243.93,
+  "pnr": "8HAHLL",
+  "purchaseDate": {
+    "__date": "2026-03-12T00:00:00.000Z"
+  },
+  "totalAmount": 2195.37,
+  "type": "flight"
+}

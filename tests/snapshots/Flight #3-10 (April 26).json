@@ -1,0 +1,32 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "Pegasus",
+      "arrivalAirport": "Sabiha Gokcen",
+      "departureAirport": "Eindhoven",
+      "departureDate": {
+        "__date": "2026-02-02T00:00:00.000Z"
+      },
+      "departureTime": 12.15,
+      "flightNumber": "PC1266"
+    }
+  ],
+  "passengers": [
+    "Delano Buvens",
+    "Zeno Dams",
+    "Arzu Dilli",
+    "Ecevit Kiyak",
+    "Bülent Boz",
+    "Hafiz Demir",
+    "Yigithan Serttas",
+    "Evelyn Rademakers"
+  ],
+  "perPassengerAmount": 94.33,
+  "pnr": null,
+  "purchaseDate": {
+    "__date": "2026-01-24T00:00:00.000Z"
+  },
+  "totalAmount": 754.64,
+  "type": "flight"
+}

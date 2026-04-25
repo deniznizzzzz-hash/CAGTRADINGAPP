@@ -1,0 +1,25 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "THY",
+      "arrivalAirport": "Istanbul",
+      "departureAirport": "Brussels",
+      "departureDate": {
+        "__date": "2026-03-06T00:00:00.000Z"
+      },
+      "departureTime": 11.35,
+      "flightNumber": "TK1938"
+    }
+  ],
+  "passengers": [
+    "Turker Dursun"
+  ],
+  "perPassengerAmount": 128.24,
+  "pnr": "2352292456313",
+  "purchaseDate": {
+    "__date": "2026-02-13T00:00:00.000Z"
+  },
+  "totalAmount": 128.24,
+  "type": "flight"
+}

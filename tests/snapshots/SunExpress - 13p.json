@@ -1,0 +1,32 @@
+{
+  "currency": "TRY",
+  "legs": [
+    {
+      "airline": "SunExpress",
+      "arrivalAirport": "Eskisehir",
+      "departureAirport": "Brussels",
+      "departureDate": {
+        "__date": "2026-04-19T00:00:00.000Z"
+      },
+      "departureTime": 8.2,
+      "flightNumber": "XQ1457"
+    }
+  ],
+  "passengers": [
+    "Abdulkadir Arikan",
+    "Ugur Uysal",
+    "Safiye Burackin",
+    "Ken Vaneylen",
+    "Wesley Joos",
+    "Yesien Yahiaoui",
+    "Huseyin Altuntas",
+    "Noah Govaerts"
+  ],
+  "perPassengerAmount": 11615.92,
+  "pnr": "TY4C2X",
+  "purchaseDate": {
+    "__date": "2026-04-15T00:00:00.000Z"
+  },
+  "totalAmount": 92927.36,
+  "type": "flight"
+}

@@ -1,0 +1,26 @@
+{
+  "currency": "TRY",
+  "legs": [
+    {
+      "airline": "Ajet",
+      "arrivalAirport": "Brussels",
+      "departureAirport": "Cukurova",
+      "departureDate": {
+        "__date": "2026-04-20T00:00:00.000Z"
+      },
+      "departureTime": 9.2,
+      "flightNumber": "VF3143 / VF67"
+    }
+  ],
+  "passengers": [
+    "Cengizhan Gündem",
+    "Ali Olcay Dinli"
+  ],
+  "perPassengerAmount": 16714.19,
+  "pnr": "437Y7N",
+  "purchaseDate": {
+    "__date": "2026-04-16T00:00:00.000Z"
+  },
+  "totalAmount": 33428.38,
+  "type": "flight"
+}

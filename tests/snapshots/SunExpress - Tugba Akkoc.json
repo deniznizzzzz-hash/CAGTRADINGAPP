@@ -1,0 +1,25 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "SunExpress",
+      "arrivalAirport": "Brussels",
+      "departureAirport": "Eskisehir",
+      "departureDate": {
+        "__date": "2026-04-10T00:00:00.000Z"
+      },
+      "departureTime": 13.55,
+      "flightNumber": "XQ1456"
+    }
+  ],
+  "passengers": [
+    "Tugba Akkoc"
+  ],
+  "perPassengerAmount": 159.99,
+  "pnr": "XKC27A",
+  "purchaseDate": {
+    "__date": "2026-04-03T00:00:00.000Z"
+  },
+  "totalAmount": 159.99,
+  "type": "flight"
+}

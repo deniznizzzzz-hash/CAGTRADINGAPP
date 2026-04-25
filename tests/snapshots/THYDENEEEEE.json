@@ -1,0 +1,35 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "THY",
+      "arrivalAirport": "Dusseldorf",
+      "departureAirport": "Istanbul",
+      "departureDate": {
+        "__date": "2025-12-02T00:00:00.000Z"
+      },
+      "departureTime": 21.05,
+      "flightNumber": "TK1529"
+    },
+    {
+      "airline": "THY",
+      "arrivalAirport": "Istanbul",
+      "departureAirport": "Dusseldorf",
+      "departureDate": {
+        "__date": "2025-12-05T00:00:00.000Z"
+      },
+      "departureTime": 7.1,
+      "flightNumber": "TK1530"
+    }
+  ],
+  "passengers": [
+    "Mustafatanzer Ergul"
+  ],
+  "perPassengerAmount": 1241.63,
+  "pnr": "2352285239328",
+  "purchaseDate": {
+    "__date": "2025-12-01T00:00:00.000Z"
+  },
+  "totalAmount": 1241.63,
+  "type": "flight"
+}

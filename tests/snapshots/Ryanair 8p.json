@@ -1,0 +1,32 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "Ryanair",
+      "arrivalAirport": "Charleroi",
+      "departureAirport": "Iasi",
+      "departureDate": {
+        "__date": "2026-02-27T00:00:00.000Z"
+      },
+      "departureTime": 21.1,
+      "flightNumber": "FR9551"
+    }
+  ],
+  "passengers": [
+    "Ali Yuksel",
+    "Benny Andreas P Cools",
+    "Niko Hendrickx",
+    "Gert Wouters",
+    "Margino Luyten",
+    "Paulo Lunda",
+    "Rivelino Malonti",
+    "Muhammed Ihsan Ersoyak"
+  ],
+  "perPassengerAmount": 54.76,
+  "pnr": "F3142N",
+  "purchaseDate": {
+    "__date": "2026-02-06T00:00:00.000Z"
+  },
+  "totalAmount": 438.1,
+  "type": "flight"
+}

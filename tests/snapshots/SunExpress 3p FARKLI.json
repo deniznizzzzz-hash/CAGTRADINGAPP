@@ -1,0 +1,25 @@
+{
+  "currency": null,
+  "legs": [
+    {
+      "airline": "SunExpress",
+      "arrivalAirport": "Eskisehir",
+      "departureAirport": "Brussels",
+      "departureDate": {
+        "__date": "2026-04-24T00:00:00.000Z"
+      },
+      "departureTime": 8.2,
+      "flightNumber": "XQ1457"
+    }
+  ],
+  "passengers": [
+    "Yavuz Keskin",
+    "Muhammet Mustafa Gokkaya",
+    "Zihni Sinan Karabulut"
+  ],
+  "perPassengerAmount": null,
+  "pnr": "L72S86",
+  "purchaseDate": null,
+  "totalAmount": null,
+  "type": "flight"
+}

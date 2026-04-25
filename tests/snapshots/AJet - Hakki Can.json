@@ -1,0 +1,25 @@
+{
+  "currency": "TRY",
+  "legs": [
+    {
+      "airline": "Ajet",
+      "arrivalAirport": "Sabiha Gokcen",
+      "departureAirport": "Brussels",
+      "departureDate": {
+        "__date": "2026-04-13T00:00:00.000Z"
+      },
+      "departureTime": 12.15,
+      "flightNumber": "VF66"
+    }
+  ],
+  "passengers": [
+    "Hakki Can"
+  ],
+  "perPassengerAmount": 5490.11,
+  "pnr": "426N0P",
+  "purchaseDate": {
+    "__date": "2026-04-08T00:00:00.000Z"
+  },
+  "totalAmount": 5490.11,
+  "type": "flight"
+}

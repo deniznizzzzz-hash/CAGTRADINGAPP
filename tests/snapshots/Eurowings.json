@@ -1,0 +1,38 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "Eurowings",
+      "arrivalAirport": "Birmingham",
+      "departureAirport": "Dusseldorf",
+      "departureDate": {
+        "__date": "2026-03-17T00:00:00.000Z"
+      },
+      "departureTime": 7,
+      "flightNumber": "EW9330"
+    },
+    {
+      "airline": "Eurowings",
+      "arrivalAirport": "Dusseldorf",
+      "departureAirport": "Birmingham",
+      "departureDate": {
+        "__date": "2026-03-19T00:00:00.000Z"
+      },
+      "departureTime": 8.1,
+      "flightNumber": "EW9331"
+    }
+  ],
+  "passengers": [
+    "Kevin Houben",
+    "Ben Dirk F Kenis",
+    "Gerard Dexters",
+    "Bart Peeters"
+  ],
+  "perPassengerAmount": 319.98,
+  "pnr": "VGIN2F",
+  "purchaseDate": {
+    "__date": "2026-03-11T00:00:00.000Z"
+  },
+  "totalAmount": 1279.92,
+  "type": "flight"
+}

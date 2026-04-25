@@ -1,0 +1,25 @@
+{
+  "currency": "TRY",
+  "legs": [
+    {
+      "airline": "Ajet",
+      "arrivalAirport": "Brussels",
+      "departureAirport": "Cukurova",
+      "departureDate": {
+        "__date": "2026-04-26T00:00:00.000Z"
+      },
+      "departureTime": 10.45,
+      "flightNumber": "VF3143 / VF67"
+    }
+  ],
+  "passengers": [
+    "Ali Yuksel"
+  ],
+  "perPassengerAmount": 8590.38,
+  "pnr": "426LC9",
+  "purchaseDate": {
+    "__date": "2026-04-08T00:00:00.000Z"
+  },
+  "totalAmount": 8590.38,
+  "type": "flight"
+}

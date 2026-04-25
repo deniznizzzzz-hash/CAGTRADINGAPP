@@ -1,0 +1,25 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "SunExpress",
+      "arrivalAirport": "Brussels",
+      "departureAirport": "Eskisehir",
+      "departureDate": {
+        "__date": "2026-04-12T00:00:00.000Z"
+      },
+      "departureTime": 13.55,
+      "flightNumber": "XQ1456"
+    }
+  ],
+  "passengers": [
+    "Baris Turkutanit"
+  ],
+  "perPassengerAmount": 349.98,
+  "pnr": "UFZ538",
+  "purchaseDate": {
+    "__date": "2026-04-02T00:00:00.000Z"
+  },
+  "totalAmount": 349.98,
+  "type": "flight"
+}

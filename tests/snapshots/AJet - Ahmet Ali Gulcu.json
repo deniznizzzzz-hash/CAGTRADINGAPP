@@ -1,0 +1,25 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "Ajet",
+      "arrivalAirport": "Brussels",
+      "departureAirport": "Cukurova",
+      "departureDate": {
+        "__date": "2026-04-12T00:00:00.000Z"
+      },
+      "departureTime": 10.45,
+      "flightNumber": "VF3143 / VF67"
+    }
+  ],
+  "passengers": [
+    "Ahmet Ali Gülcü"
+  ],
+  "perPassengerAmount": 326.42,
+  "pnr": "41DS18",
+  "purchaseDate": {
+    "__date": "2026-04-02T00:00:00.000Z"
+  },
+  "totalAmount": 326.42,
+  "type": "flight"
+}

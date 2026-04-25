@@ -1,0 +1,35 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "Pegasus",
+      "arrivalAirport": "Sabiha Gokcen",
+      "departureAirport": "Eindhoven",
+      "departureDate": {
+        "__date": "2025-12-24T00:00:00.000Z"
+      },
+      "departureTime": 12.2,
+      "flightNumber": "PC1266"
+    },
+    {
+      "airline": "Pegasus",
+      "arrivalAirport": "Eindhoven",
+      "departureAirport": "Sabiha Gokcen",
+      "departureDate": {
+        "__date": "2026-01-05T00:00:00.000Z"
+      },
+      "departureTime": 10.4,
+      "flightNumber": "PC1265"
+    }
+  ],
+  "passengers": [
+    "Kamil Serkan Kalender"
+  ],
+  "perPassengerAmount": 607.48,
+  "pnr": null,
+  "purchaseDate": {
+    "__date": "2025-12-04T00:00:00.000Z"
+  },
+  "totalAmount": 607.48,
+  "type": "flight"
+}

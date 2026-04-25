@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>C.A.G. Trading — Flight PDF → Excel</title>
@@ -10,86 +10,136 @@
     <div class="header-row">
       <div>
         <h1>C.A.G. Trading</h1>
-        <p class="subtitle">Uçuş PDF'lerini Excel'e aktar</p>
+        <p class="subtitle">Convert flight PDFs to Excel · Statement reconciliation</p>
       </div>
       <div class="updater">
-        <button id="checkUpdateBtn" class="secondary small">Güncellemeleri Denetle</button>
+        <button id="checkUpdateBtn" class="secondary small">Check for Updates</button>
         <span id="updateStatus" class="muted"></span>
       </div>
     </div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="flights">Tickets → Excel</button>
+      <button class="tab" data-tab="statement">Statement Check</button>
+    </nav>
   </header>
 
   <main>
-    <section class="card">
-      <h2>1. Döviz Kurları (Elle Gir)</h2>
-      <div class="rates-manual">
-        <div class="rate-field">
-          <label for="rateTRY">1 EUR =</label>
-          <input type="text" id="rateTRY" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="örn. 43.25">
-          <span>TRY</span>
-        </div>
-        <div class="rate-field">
-          <label for="rateGBP">1 EUR =</label>
-          <input type="text" id="rateGBP" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="örn. 0.8532">
-          <span>GBP</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>2. Excel Modu</h2>
-      <div class="modes">
-        <label class="mode">
-          <input type="radio" name="mode" value="new" checked>
-          <div>
-            <strong>Yeni dosya oluştur</strong>
-            <div class="sub">
-              Ay:
-              <select id="monthSelect"></select>
-              Yıl:
-              <input type="number" id="yearInput" min="2020" max="2099" style="width:80px">
-            </div>
+    <!-- ========== TAB: FLIGHTS ========== -->
+    <div class="tab-content active" id="tab-flights">
+      <section class="card">
+        <h2>1. Exchange Rates (Manual)</h2>
+        <div class="rates-manual">
+          <div class="rate-field">
+            <label for="rateTRY">1 EUR =</label>
+            <input type="text" id="rateTRY" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="e.g. 43.25">
+            <span>TRY</span>
           </div>
-        </label>
-        <label class="mode">
-          <input type="radio" name="mode" value="append">
-          <div>
-            <strong>Mevcut dosyaya ekle</strong>
-            <div class="sub">
-              <button id="pickExcelBtn" class="secondary small">Excel seç</button>
-              <span id="excelPath" class="muted">—</span>
-            </div>
+          <div class="rate-field">
+            <label for="rateGBP">1 EUR =</label>
+            <input type="text" id="rateGBP" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="e.g. 0.8532">
+            <span>GBP</span>
           </div>
-        </label>
-      </div>
-    </section>
+        </div>
+      </section>
 
-    <section class="card">
-      <h2>3. Çıktı Klasörü</h2>
-      <div class="row">
-        <button id="pickFolderBtn" class="secondary">Klasör Seç</button>
-        <span id="folderPath" class="muted">—</span>
-      </div>
-    </section>
+      <section class="card">
+        <h2>2. Excel Mode</h2>
+        <div class="modes">
+          <label class="mode">
+            <input type="radio" name="mode" value="new" checked>
+            <div>
+              <strong>Create new file</strong>
+              <div class="sub">
+                Month:
+                <select id="monthSelect"></select>
+                Year:
+                <input type="number" id="yearInput" min="2020" max="2099" style="width:80px">
+              </div>
+            </div>
+          </label>
+          <label class="mode">
+            <input type="radio" name="mode" value="append">
+            <div>
+              <strong>Append to existing file</strong>
+              <div class="sub">
+                <button id="pickExcelBtn" class="secondary small">Select Excel</button>
+                <span id="excelPath" class="muted">—</span>
+              </div>
+            </div>
+          </label>
+        </div>
+      </section>
 
-    <section class="card">
-      <h2>4. PDF'ler</h2>
-      <div id="dropzone" class="dropzone">
-        <div>PDF'leri buraya sürükleyip bırakın</div>
-        <div class="sub">veya</div>
-        <button id="pickPdfsBtn" class="secondary">PDF Seç</button>
-      </div>
-      <ul id="pdfList" class="pdflist"></ul>
-    </section>
+      <section class="card">
+        <h2>3. Output Folder</h2>
+        <div class="row">
+          <button id="pickFolderBtn" class="secondary">Select Folder</button>
+          <span id="folderPath" class="muted">—</span>
+        </div>
+      </section>
 
-    <section class="card">
-      <h2>5. İşle</h2>
-      <div class="row">
-        <button id="processBtn" class="primary">Excel'e Aktar</button>
-        <span id="statusText" class="muted"></span>
-      </div>
-      <pre id="log" class="log" aria-live="polite"></pre>
-    </section>
+      <section class="card">
+        <h2>4. PDFs</h2>
+        <div id="dropzone" class="dropzone">
+          <div>Drop PDF files here</div>
+          <div class="sub">or</div>
+          <button id="pickPdfsBtn" class="secondary">Select PDFs</button>
+        </div>
+        <ul id="pdfList" class="pdflist"></ul>
+      </section>
+
+      <section class="card">
+        <h2>5. Process</h2>
+        <div class="row">
+          <button id="processBtn" class="primary">Export to Excel</button>
+          <span id="statusText" class="muted"></span>
+        </div>
+        <pre id="log" class="log" aria-live="polite"></pre>
+      </section>
+    </div>
+
+    <!-- ========== TAB: STATEMENT CHECK ========== -->
+    <div class="tab-content" id="tab-statement">
+      <section class="card">
+        <h2>1. Statement PDFs</h2>
+        <p class="muted" style="margin:0 0 8px">Supported banks: <b>American Express UK</b>, <b>Revolut</b>, <b>Lloyds Bank UK</b></p>
+        <div id="stmtDropzone" class="dropzone">
+          <div>Drop statement PDFs here</div>
+          <div class="sub">or</div>
+          <button id="stmtPickBtn" class="secondary">Select Statement PDFs</button>
+        </div>
+        <ul id="stmtList" class="pdflist"></ul>
+      </section>
+
+      <section class="card">
+        <h2>2. Ticket PDFs</h2>
+        <p class="muted" style="margin:0 0 8px">TRY-priced tickets are paid via a separate channel and will be skipped automatically.</p>
+        <div id="ticketDropzone" class="dropzone">
+          <div>Drop ticket PDFs here</div>
+          <div class="sub">or</div>
+          <button id="ticketPickBtn" class="secondary">Select Ticket PDFs</button>
+        </div>
+        <ul id="ticketList" class="pdflist"></ul>
+      </section>
+
+      <section class="card">
+        <h2>3. Output Folder</h2>
+        <div class="row">
+          <button id="stmtPickFolderBtn" class="secondary">Select Folder</button>
+          <span id="stmtFolderPath" class="muted">—</span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>4. Run</h2>
+        <p class="muted" style="margin:0 0 8px">Matches use exact same-currency amounts and a &plusmn;1 day window. Cross-currency charges match via the bank's own foreign-amount slot &mdash; no FX conversion is applied.</p>
+        <div class="row">
+          <button id="stmtRunBtn" class="primary">Check &amp; Generate Report</button>
+          <span id="stmtStatusText" class="muted"></span>
+        </div>
+        <pre id="stmtLog" class="log" aria-live="polite"></pre>
+      </section>
+    </div>
   </main>
 
   <script src="renderer.js"></script>

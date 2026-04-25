@@ -1,0 +1,32 @@
+{
+  "currency": "TRY",
+  "legs": [
+    {
+      "airline": "Ajet",
+      "arrivalAirport": "Brussels",
+      "departureAirport": "Sabiha Gokcen",
+      "departureDate": {
+        "__date": "2026-04-25T00:00:00.000Z"
+      },
+      "departureTime": 13.35,
+      "flightNumber": "VF67"
+    }
+  ],
+  "passengers": [
+    "Abdulkadir Arikan",
+    "Safiye Burakcin",
+    "Ken Vaneylen",
+    "Wesley Joos",
+    "Yesien Yahiaoui",
+    "Huseyin Altuntas",
+    "Noah Govaerts",
+    "Halil Pas"
+  ],
+  "perPassengerAmount": 7395.09,
+  "pnr": "4346FU",
+  "purchaseDate": {
+    "__date": "2026-04-15T00:00:00.000Z"
+  },
+  "totalAmount": 59160.72,
+  "type": "flight"
+}

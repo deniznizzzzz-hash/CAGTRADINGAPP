@@ -1,0 +1,23 @@
+{
+  "currency": null,
+  "legs": [
+    {
+      "airline": "SunExpress",
+      "arrivalAirport": "Eskisehir",
+      "departureAirport": "Brussels",
+      "departureDate": {
+        "__date": "2026-04-17T00:00:00.000Z"
+      },
+      "departureTime": 8.2,
+      "flightNumber": "XQ1457"
+    }
+  ],
+  "passengers": [
+    "Bugra Unutulmazsoy"
+  ],
+  "perPassengerAmount": null,
+  "pnr": "768907788",
+  "purchaseDate": null,
+  "totalAmount": null,
+  "type": "flight"
+}

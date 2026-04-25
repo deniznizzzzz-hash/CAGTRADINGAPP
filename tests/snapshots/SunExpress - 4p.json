@@ -1,0 +1,38 @@
+{
+  "currency": "TRY",
+  "legs": [
+    {
+      "airline": "SunExpress",
+      "arrivalAirport": "Brussels",
+      "departureAirport": "Eskisehir",
+      "departureDate": {
+        "__date": "2026-04-13T00:00:00.000Z"
+      },
+      "departureTime": 13.55,
+      "flightNumber": "XQ1456"
+    },
+    {
+      "airline": "SunExpress",
+      "arrivalAirport": "Eskisehir",
+      "departureAirport": "Brussels",
+      "departureDate": {
+        "__date": "2026-04-17T00:00:00.000Z"
+      },
+      "departureTime": 8.2,
+      "flightNumber": "XQ1457"
+    }
+  ],
+  "passengers": [
+    "Serdar Demircan",
+    "Seckin Bal",
+    "Caner Yildiz",
+    "Bora Yalcin"
+  ],
+  "perPassengerAmount": 25295.84,
+  "pnr": "SC9VP2",
+  "purchaseDate": {
+    "__date": "2026-04-08T00:00:00.000Z"
+  },
+  "totalAmount": 101183.36,
+  "type": "flight"
+}

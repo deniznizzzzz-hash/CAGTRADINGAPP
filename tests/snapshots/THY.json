@@ -1,0 +1,27 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "THY",
+      "arrivalAirport": "Brussels",
+      "departureAirport": "Istanbul",
+      "departureDate": {
+        "__date": "2026-03-23T00:00:00.000Z"
+      },
+      "departureTime": 12.45,
+      "flightNumber": "TK1943"
+    }
+  ],
+  "passengers": [
+    "Suleyman Deniz Armagan",
+    "Bugra Unutulmazsoy",
+    "Mehmet Adalioglu"
+  ],
+  "perPassengerAmount": 128.47,
+  "pnr": "T46SEE",
+  "purchaseDate": {
+    "__date": "2026-03-17T00:00:00.000Z"
+  },
+  "totalAmount": 385.41,
+  "type": "flight"
+}

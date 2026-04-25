@@ -1,0 +1,25 @@
+{
+  "currency": "GBP",
+  "legs": [
+    {
+      "airline": "Ajet",
+      "arrivalAirport": "Sabiha Gokcen",
+      "departureAirport": "Brussels",
+      "departureDate": {
+        "__date": "2026-03-09T00:00:00.000Z"
+      },
+      "departureTime": 13.5,
+      "flightNumber": null
+    }
+  ],
+  "passengers": [
+    "Ben Dirk F Kenis"
+  ],
+  "perPassengerAmount": 82.3,
+  "pnr": "3SUGEM",
+  "purchaseDate": {
+    "__date": "2026-03-04T00:00:00.000Z"
+  },
+  "totalAmount": 82.3,
+  "type": "flight"
+}

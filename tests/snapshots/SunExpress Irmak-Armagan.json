@@ -1,0 +1,36 @@
+{
+  "currency": "TRY",
+  "legs": [
+    {
+      "airline": "SunExpress",
+      "arrivalAirport": "Brussels",
+      "departureAirport": "Eskisehir",
+      "departureDate": {
+        "__date": "2026-04-19T00:00:00.000Z"
+      },
+      "departureTime": 13.55,
+      "flightNumber": "XQ1456"
+    },
+    {
+      "airline": "SunExpress",
+      "arrivalAirport": "Eskisehir",
+      "departureAirport": "Brussels",
+      "departureDate": {
+        "__date": "2026-04-24T00:00:00.000Z"
+      },
+      "departureTime": 8.2,
+      "flightNumber": "XQ1457"
+    }
+  ],
+  "passengers": [
+    "Mesut Irmak",
+    "Suleyman Deniz Armagan"
+  ],
+  "perPassengerAmount": 31684.29,
+  "pnr": "RAM2FZ",
+  "purchaseDate": {
+    "__date": "2026-04-16T00:00:00.000Z"
+  },
+  "totalAmount": 63368.58,
+  "type": "flight"
+}

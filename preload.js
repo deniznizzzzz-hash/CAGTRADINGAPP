@@ -11,5 +11,7 @@ contextBridge.exposeInMainWorld('api', {
   showItem: (p) => ipcRenderer.invoke('show-item', p),
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   installUpdate: (args) => ipcRenderer.invoke('install-update', args),
-  onUpdateProgress: (cb) => ipcRenderer.on('update-download-progress', (_e, d) => cb(d))
+  onUpdateProgress: (cb) => ipcRenderer.on('update-download-progress', (_e, d) => cb(d)),
+  parseStatementPdf: (p) => ipcRenderer.invoke('parse-statement-pdf', p),
+  runStatementCheck: (payload) => ipcRenderer.invoke('run-statement-check', payload)
 });

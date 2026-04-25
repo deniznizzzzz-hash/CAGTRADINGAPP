@@ -1,0 +1,23 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "Ryanair",
+      "arrivalAirport": "",
+      "departureAirport": "",
+      "departureDate": null,
+      "departureTime": null,
+      "flightNumber": null
+    }
+  ],
+  "passengers": [
+    ""
+  ],
+  "perPassengerAmount": 438.1,
+  "pnr": "F3142N",
+  "purchaseDate": {
+    "__date": "2026-02-06T00:00:00.000Z"
+  },
+  "totalAmount": 438.1,
+  "type": "flight"
+}

@@ -1,0 +1,35 @@
+{
+  "currency": "EUR",
+  "legs": [
+    {
+      "airline": "Pegasus",
+      "arrivalAirport": "Sabiha Gokcen",
+      "departureAirport": "Eindhoven",
+      "departureDate": {
+        "__date": "2026-02-22T00:00:00.000Z"
+      },
+      "departureTime": 11.2,
+      "flightNumber": "PC1266"
+    },
+    {
+      "airline": "Pegasus",
+      "arrivalAirport": "Eindhoven",
+      "departureAirport": "Sabiha Gokcen",
+      "departureDate": {
+        "__date": "2026-02-26T00:00:00.000Z"
+      },
+      "departureTime": 8.45,
+      "flightNumber": "PC1265"
+    }
+  ],
+  "passengers": [
+    "Robert Bevers"
+  ],
+  "perPassengerAmount": 179.33,
+  "pnr": null,
+  "purchaseDate": {
+    "__date": "2026-02-09T00:00:00.000Z"
+  },
+  "totalAmount": 179.33,
+  "type": "flight"
+}

@@ -4,22 +4,49 @@ const state = {
   pdfs: []  // [{ path, parsed, status }]
 };
 
+// Statement-check feature has its own state bucket.
+const stmtState = {
+  outputFolder: null,
+  statements: [], // [{ path }]
+  tickets: []     // [{ path }]
+};
+
 const $ = (id) => document.getElementById(id);
 const log = (msg) => {
   const el = $('log');
   el.textContent += (el.textContent ? '\n' : '') + msg;
   el.scrollTop = el.scrollHeight;
 };
+const stmtLog = (msg) => {
+  const el = $('stmtLog');
+  el.textContent += (el.textContent ? '\n' : '') + msg;
+  el.scrollTop = el.scrollHeight;
+};
+
+// ---- Tabs
+function initTabs() {
+  const tabs = document.querySelectorAll('.tab');
+  const panes = document.querySelectorAll('.tab-content');
+  tabs.forEach(t => {
+    t.onclick = () => {
+      tabs.forEach(x => x.classList.remove('active'));
+      panes.forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      const pane = document.getElementById('tab-' + t.dataset.tab);
+      if (pane) pane.classList.add('active');
+    };
+  });
+}
 
 // ---- Month/Year selectors
-const MONTHS_TR = [
-  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+const MONTHS_EN = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
 ];
 function initMonthYear() {
   const sel = $('monthSelect');
   const now = new Date();
-  MONTHS_TR.forEach((m, i) => {
+  MONTHS_EN.forEach((m, i) => {
     const opt = document.createElement('option');
     opt.value = String(i);
     opt.textContent = m;
@@ -31,16 +58,12 @@ function initMonthYear() {
 
 // ---- Manual rates (persisted in localStorage)
 function initRates() {
-  const savedTRY = localStorage.getItem('rateTRY') || '';
-  const savedGBP = localStorage.getItem('rateGBP') || '';
-  $('rateTRY').value = savedTRY;
-  $('rateGBP').value = savedGBP;
-  $('rateTRY').addEventListener('input', () => {
-    localStorage.setItem('rateTRY', $('rateTRY').value);
-  });
-  $('rateGBP').addEventListener('input', () => {
-    localStorage.setItem('rateGBP', $('rateGBP').value);
-  });
+  const bind = (id, key) => {
+    $(id).value = localStorage.getItem(key) || '';
+    $(id).addEventListener('input', () => localStorage.setItem(key, $(id).value));
+  };
+  bind('rateTRY', 'rateTRY');
+  bind('rateGBP', 'rateGBP');
 }
 function parseRateInput(s) {
   if (!s) return NaN;
@@ -103,7 +126,7 @@ function renderPdfList() {
     const name = f.path.split(/[\\/]/).pop();
     li.innerHTML = `
       <span>${escapeHtml(name)} <span class="muted">[${f.status}]</span></span>
-      <button class="rm" data-i="${idx}">Sil</button>`;
+      <button class="rm" data-i="${idx}">Remove</button>`;
     ul.appendChild(li);
   });
   ul.querySelectorAll('.rm').forEach(b => {
@@ -119,62 +142,67 @@ function escapeHtml(s) {
   }[c]));
 }
 
-const dz = $('dropzone');
-['dragenter', 'dragover'].forEach(ev =>
-  dz.addEventListener(ev, e => {
-    e.preventDefault();
-    e.stopPropagation();
-    dz.classList.add('hover');
-  })
-);
-['dragleave', 'drop'].forEach(ev =>
-  dz.addEventListener(ev, e => {
-    e.preventDefault();
-    e.stopPropagation();
-    dz.classList.remove('hover');
-  })
-);
-dz.addEventListener('drop', e => {
-  const paths = [];
-  for (const f of e.dataTransfer.files) {
-    if (f.path && f.path.toLowerCase().endsWith('.pdf')) paths.push(f.path);
-  }
-  addPdfs(paths);
-});
+// Drop-zone helper — wires drag events + drop handler for a zone that pushes
+// into a callback.
+function wireDropzone(zoneEl, onPaths) {
+  ['dragenter', 'dragover'].forEach(ev =>
+    zoneEl.addEventListener(ev, e => {
+      e.preventDefault();
+      e.stopPropagation();
+      zoneEl.classList.add('hover');
+    })
+  );
+  ['dragleave', 'drop'].forEach(ev =>
+    zoneEl.addEventListener(ev, e => {
+      e.preventDefault();
+      e.stopPropagation();
+      zoneEl.classList.remove('hover');
+    })
+  );
+  zoneEl.addEventListener('drop', e => {
+    const paths = [];
+    for (const f of e.dataTransfer.files) {
+      if (f.path && f.path.toLowerCase().endsWith('.pdf')) paths.push(f.path);
+    }
+    onPaths(paths);
+  });
+}
+
+wireDropzone($('dropzone'), addPdfs);
 
 // ---- Process
 $('processBtn').onclick = async () => {
   try {
     const rates = getManualRates();
     if (!rates.rates.TRY || !rates.rates.GBP) {
-      alert('Lütfen TRY ve GBP kurlarını elle girin.');
+      alert('Please enter both TRY and GBP rates.');
       return;
     }
     if (!state.outputFolder) {
-      alert('Lütfen çıktı klasörü seçin.');
+      alert('Please select an output folder.');
       return;
     }
     if (!state.pdfs.length) {
-      alert('Lütfen en az bir PDF ekleyin.');
+      alert('Please add at least one PDF.');
       return;
     }
     const mode = document.querySelector('input[name="mode"]:checked').value;
     if (mode === 'append' && !state.existingExcelPath) {
-      alert('Lütfen mevcut bir Excel dosyası seçin.');
+      alert('Please select an existing Excel file.');
       return;
     }
     $('processBtn').disabled = true;
     $('log').textContent = '';
-    $('statusText').textContent = 'İşleniyor...';
+    $('statusText').textContent = 'Processing...';
 
     // 1) Parse all PDFs
-    log(`${state.pdfs.length} PDF parse ediliyor...`);
+    log(`Parsing ${state.pdfs.length} PDF(s)...`);
     for (const f of state.pdfs) {
       if (!f.parsed) {
         try {
           f.parsed = await window.api.parsePdf(f.path);
           const fname = f.path.split(/[\\/]/).pop();
-          log(`  ✓ ${fname} — ${f.parsed.passengers.length} yolcu, ${f.parsed.legs.length} uçuş, toplam ${f.parsed.totalAmount ?? '?'} ${f.parsed.currency ?? ''}`);
+          log(`  ✓ ${fname} — ${f.parsed.passengers.length} passenger(s), ${f.parsed.legs.length} flight(s), total ${f.parsed.totalAmount ?? '?'} ${f.parsed.currency ?? ''}`);
           f.status = 'parsed';
         } catch (e) {
           f.status = 'error';
@@ -186,12 +214,12 @@ $('processBtn').onclick = async () => {
 
     const ok = state.pdfs.filter(x => x.parsed && !x.parsed.__error);
     if (!ok.length) {
-      log('Başarılı parse edilen PDF yok.');
+      log('No PDFs parsed successfully.');
       return;
     }
 
     // 2) Process batch
-    log('Excel yazılıyor...');
+    log('Writing Excel...');
     const payload = {
       outputFolder: state.outputFolder,
       mode,
@@ -207,29 +235,144 @@ $('processBtn').onclick = async () => {
       };
     }
     const res = await window.api.processBatch(payload);
-    log(`✓ Excel güncellendi: ${res.excelPath}`);
-    log(`✓ ${res.rowsAdded} satır eklendi`);
+    log(`✓ Excel updated: ${res.excelPath}`);
+    log(`✓ ${res.rowsAdded} row(s) added`);
     for (const r of res.renamedPdfs) {
       log(`  PDF → ${r.to.split(/[\\/]/).pop()}`);
     }
     if (res.warnings?.length) {
-      log('Uyarılar:');
+      log('Warnings:');
       res.warnings.forEach(w => log('  ⚠ ' + w));
     }
     $('statusText').innerHTML =
-      `Tamam. <a href="#" id="openOut">Klasörü aç</a>`;
+      `Done. <a href="#" id="openOut">Open folder</a>`;
     $('openOut').onclick = (e) => {
       e.preventDefault();
       window.api.showItem(res.excelPath);
     };
   } catch (e) {
-    log('HATA: ' + e.message);
-    $('statusText').textContent = 'Hata.';
+    log('ERROR: ' + e.message);
+    $('statusText').textContent = 'Error.';
   } finally {
     $('processBtn').disabled = false;
   }
 };
 
+// ==================== STATEMENT CHECK TAB ====================
+
+function renderStmtList(ul, arr, onRemove) {
+  ul.innerHTML = '';
+  arr.forEach((f, idx) => {
+    const li = document.createElement('li');
+    const name = f.path.split(/[\\/]/).pop();
+    li.innerHTML = `
+      <span>${escapeHtml(name)}</span>
+      <button class="rm" data-i="${idx}">Remove</button>`;
+    ul.appendChild(li);
+  });
+  ul.querySelectorAll('.rm').forEach(b => {
+    b.onclick = () => {
+      onRemove(+b.dataset.i);
+    };
+  });
+}
+
+function refreshStmtList() {
+  renderStmtList($('stmtList'), stmtState.statements, i => {
+    stmtState.statements.splice(i, 1);
+    refreshStmtList();
+  });
+}
+function refreshTicketList() {
+  renderStmtList($('ticketList'), stmtState.tickets, i => {
+    stmtState.tickets.splice(i, 1);
+    refreshTicketList();
+  });
+}
+
+function addStatements(paths) {
+  for (const p of paths) {
+    if (stmtState.statements.find(x => x.path === p)) continue;
+    stmtState.statements.push({ path: p });
+  }
+  refreshStmtList();
+}
+
+function addStmtTickets(paths) {
+  for (const p of paths) {
+    if (stmtState.tickets.find(x => x.path === p)) continue;
+    stmtState.tickets.push({ path: p });
+  }
+  refreshTicketList();
+}
+
+$('stmtPickBtn').onclick = async () => {
+  const paths = await window.api.selectPdfs();
+  addStatements(paths);
+};
+$('ticketPickBtn').onclick = async () => {
+  const paths = await window.api.selectPdfs();
+  addStmtTickets(paths);
+};
+$('stmtPickFolderBtn').onclick = async () => {
+  const p = await window.api.selectOutputFolder();
+  if (p) {
+    stmtState.outputFolder = p;
+    $('stmtFolderPath').textContent = p;
+    $('stmtFolderPath').classList.remove('muted');
+  }
+};
+wireDropzone($('stmtDropzone'), addStatements);
+wireDropzone($('ticketDropzone'), addStmtTickets);
+
+$('stmtRunBtn').onclick = async () => {
+  try {
+    if (!stmtState.statements.length) { alert('Add at least 1 statement PDF.'); return; }
+    if (!stmtState.tickets.length)    { alert('Add at least 1 ticket PDF.'); return; }
+    if (!stmtState.outputFolder)       { alert('Select an output folder.'); return; }
+
+    $('stmtRunBtn').disabled = true;
+    $('stmtLog').textContent = '';
+    $('stmtStatusText').textContent = 'Checking...';
+
+    stmtLog(`Checking ${stmtState.statements.length} statement(s), ${stmtState.tickets.length} ticket(s)...`);
+    const res = await window.api.runStatementCheck({
+      statementPdfs: stmtState.statements.map(s => s.path),
+      ticketPdfs: stmtState.tickets.map(t => t.path),
+      outputFolder: stmtState.outputFolder
+    });
+
+    if (!res.ok) {
+      stmtLog('ERROR: ' + res.error);
+      $('stmtStatusText').textContent = 'Error.';
+      return;
+    }
+
+    if (res.warnings?.length) {
+      stmtLog('Warnings:');
+      res.warnings.forEach(w => stmtLog('  ⚠ ' + w));
+    }
+    stmtLog(`Banks: ${res.summary.banks.join(', ')}`);
+    if (res.summary.periodLabel) stmtLog(`Period: ${res.summary.periodLabel}`);
+    stmtLog(`✓ Matched tickets: ${res.summary.matched}`);
+    stmtLog(`⚠ Unmatched tickets: ${res.summary.unmatchedTickets}`);
+    stmtLog(`  Unmatched card charges: ${res.summary.unmatchedTxns}`);
+    if (res.summary.skippedTry) stmtLog(`  (${res.summary.skippedTry} TRY ticket(s) skipped)`);
+    stmtLog(`Report: ${res.excelPath}`);
+    $('stmtStatusText').innerHTML = `Done. <a href="#" id="stmtOpenOut">Open report</a>`;
+    $('stmtOpenOut').onclick = (e) => {
+      e.preventDefault();
+      window.api.showItem(res.excelPath);
+    };
+  } catch (e) {
+    stmtLog('ERROR: ' + e.message);
+    $('stmtStatusText').textContent = 'Error.';
+  } finally {
+    $('stmtRunBtn').disabled = false;
+  }
+};
+
+initTabs();
 initMonthYear();
 initRates();
 
@@ -245,35 +388,35 @@ initRates();
     if (pendingUpdate) {
       // Second click → install
       btn.disabled = true;
-      status.textContent = 'İndiriliyor… 0%';
+      status.textContent = 'Downloading… 0%';
       window.api.onUpdateProgress(({ downloaded, total }) => {
         const pct = total > 0 ? Math.floor((downloaded / total) * 100) : 0;
-        status.textContent = `İndiriliyor… ${pct}%`;
+        status.textContent = `Downloading… ${pct}%`;
       });
       const res = await window.api.installUpdate(pendingUpdate);
       if (!res.ok) {
-        status.textContent = 'Hata: ' + res.error;
+        status.textContent = 'Error: ' + res.error;
         btn.disabled = false;
       } else {
-        status.textContent = 'Kurulum başlatıldı, uygulama kapanıyor…';
+        status.textContent = 'Installer launched, closing app…';
       }
       return;
     }
 
     btn.disabled = true;
-    status.textContent = 'Kontrol ediliyor…';
+    status.textContent = 'Checking…';
     const res = await window.api.checkForUpdates();
     btn.disabled = false;
     if (!res.ok) {
-      status.textContent = 'Kontrol edilemedi: ' + res.error;
+      status.textContent = 'Check failed: ' + res.error;
       return;
     }
     if (!res.hasUpdate) {
-      status.textContent = `Güncel (v${res.currentVersion}).`;
+      status.textContent = `Up to date (v${res.currentVersion}).`;
       return;
     }
     if (!res.downloadUrl) {
-      status.textContent = `v${res.latestVersion} mevcut ama indirme dosyası yok.`;
+      status.textContent = `v${res.latestVersion} available but no download asset.`;
       return;
     }
     pendingUpdate = {
@@ -281,8 +424,8 @@ initRates();
       assetName: res.assetName,
       latestVersion: res.latestVersion
     };
-    status.textContent = `v${res.latestVersion} mevcut. Kurmak için tekrar tıkla.`;
-    btn.textContent = 'Güncellemeyi Kur';
+    status.textContent = `v${res.latestVersion} available. Click again to install.`;
+    btn.textContent = 'Install Update';
     btn.classList.add('primary');
     btn.classList.remove('secondary');
   };
