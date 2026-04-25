@@ -1,17 +1,18 @@
 // Matches parsed flight/train tickets against parsed bank-statement
-// transactions using a "date-mandatory + amount-or-merchant" rule:
+// transactions using a "date AND amount mandatory" rule:
 //
 //   1. Date     - ticket.purchaseDate within +/-1 calendar day of txn.date
-//                 (REQUIRED - date is the most reliable signal)
-//   2. Amount   - amounts equal exactly, same currency
+//                 (REQUIRED)
+//   2. Amount   - amounts equal exactly, same currency (REQUIRED)
 //                 (or ticket vs txn.foreignAmount when the txn was charged in
 //                  ticket's currency - no FX conversion is performed)
 //   3. Merchant - an airline keyword for the ticket's airline(s) appears in
-//                 txn.description (case-insensitive)
+//                 txn.description (case-insensitive). Used only as a
+//                 tiebreaker between otherwise-equal candidates.
 //
-// Matched iff hitDate AND (hitAmount OR hitMerchant). A ticket whose date
-// doesn't fall in the +/-1-day window is never matched, even if amount and
-// merchant both line up.
+// Matched iff hitDate AND hitAmount. Without an FX layer, the only safe way
+// to know two rows describe the same charge is for the bank-printed amount
+// to equal the ticket total exactly.
 //
 // Currency handling: we never apply an FX rate. Either the statement
 // transaction is in the same currency as the ticket (compare directly), or
@@ -134,16 +135,16 @@ function matchTicketsToStatement(tickets, transactions) {
   const unmatchedTickets = [];
 
   for (const ticket of tickets) {
-    // Date is mandatory - skip txns whose date is outside the +/-1 day window.
-    // Among the remainder, require at least one more hit (amount or merchant)
-    // to qualify (effectively score >= 2 AND hitDate=true).
+    // Date AND amount are both mandatory - skip txns that miss either. Merchant
+    // hit, when present, just bumps the score so we prefer the most-confident
+    // candidate among equally-amounting rows.
     let best = null;
     let bestIdx = -1;
     for (let i = 0; i < debits.length; i++) {
       if (usedTxnIdx.has(i)) continue;
       const s = scoreMatch(ticket, debits[i]);
       if (!s.hitDate) continue;
-      if (s.score < 2) continue;
+      if (!s.hitAmount) continue;
       if (!best || s.score > best.score) {
         best = s;
         bestIdx = i;
