@@ -41,6 +41,33 @@ function titleCase(name) {
     .join(' ');
 }
 
+// Some PDF renderers split a single name particle into two tokens (e.g.
+// "VAN" → "V AN" because the glyph spacing exceeds our gap threshold). When
+// that gives a single uppercase letter followed by a short uppercase word that
+// together spell a known surname particle, glue them back. Leaves true middle
+// initials like "JOHN F KENNEDY" untouched (FKENNEDY isn't a particle).
+const NAME_PARTICLES = new Set([
+  'VAN', 'VON', 'DER', 'DEN', 'DE', 'DU', 'LE', 'LA', 'EL', 'BIN', 'IBN'
+]);
+function gluePassengerName(name) {
+  const words = name.split(/\s+/).filter(Boolean);
+  const out = [];
+  for (let i = 0; i < words.length; i++) {
+    if (
+      i + 1 < words.length
+      && words[i].length === 1
+      && /^[A-Z]$/.test(words[i])
+      && NAME_PARTICLES.has((words[i] + words[i + 1]).toUpperCase())
+    ) {
+      out.push(words[i] + words[i + 1]);
+      i++;
+    } else {
+      out.push(words[i]);
+    }
+  }
+  return out.join(' ');
+}
+
 // TR-style "61.997,76" → 61997.76; plain "82.30" → 82.30
 function parseMoney(raw) {
   if (!raw) return NaN;
@@ -420,7 +447,19 @@ function extractAJet(text, visibleText) {
       }
     } else {
       // Fall back to the first two IATA codes after the flight token.
-      const iatasAfter = iatas.filter(t => t.index > fl.index).slice(0, 2);
+      // Skip IATAs that have no HH:MM time within ~30 chars — those are
+      // section-summary mentions like "2. Flight\nÇukurova (COV)" that
+      // appear between a flight token and its real time/IATA block when a
+      // page break sits in the middle (AJet multi-page bookings).
+      const hasTimeNearby = (idx) => {
+        for (const t of times) {
+          if (Math.abs(t.index - idx) <= 30) return true;
+        }
+        return false;
+      };
+      const iatasWithTime = iatas.filter(t => hasTimeNearby(t.index));
+      const pool = iatasWithTime.length >= 2 ? iatasWithTime : iatas;
+      const iatasAfter = pool.filter(t => t.index > fl.index).slice(0, 2);
       if (iatasAfter.length < 2) continue;
       depIATA = iatasAfter[0].iata;
       arrIATA = iatasAfter[1].iata;
@@ -637,6 +676,115 @@ function extractKLMInvoice(text) {
     if (m) out.totalAmount = parseMoney(m[1]);
     const curM = text.match(/(GBP|EUR|USD|TRY)/);
     if (curM) out.currency = curM[1];
+  }
+
+  return out;
+}
+
+// KLM "Trip Details" page from klm.com.tr — what users print from the booking
+// management website (NOT the formal VAT invoice handled by extractKLMInvoice).
+// One leg per page, sometimes multi-leg.
+//   Format cues:
+//     "klm.com.tr/trip/trip-details/<uuid>?confirmation=ticket"
+//     "Total price EUR <amount>Booking code :<PNR>"
+//     "MV / MAARTEN VAN DEN BERG / Ticket number: <13 digits>"
+//     "Thursday, 30 April 2026" → flight date
+//     "London to Amsterdam" → route summary
+//     "<HH:MM>\n<IATA>" twice (departure / arrival) per leg block
+function extractKLMTripDetails(text, defaultText) {
+  const { AIRPORTS } = require('./airports');
+  const out = {
+    pnr: null,
+    purchaseDate: null,
+    passengers: [],
+    legs: [],
+    totalAmount: null,
+    currency: null
+  };
+
+  // Passenger — single all-uppercase line right before "Ticket number:".
+  // Restrict to space-only inside the capture (no \n) so the "MV" initials
+  // line above the name doesn't get glued in. Prefer defaultText when given,
+  // since the custom renderer can split surname particles ("VAN" → "V AN");
+  // gluePassengerName re-glues common ones from either source.
+  {
+    const sources = [defaultText, text].filter(Boolean);
+    for (const src of sources) {
+      const m = src.match(/\n\s*([A-Z][A-Z ]+?)\s*\nTicket number\s*:/);
+      if (m) {
+        const raw = m[1].replace(/\s+/g, ' ').trim();
+        const words = raw.split(' ');
+        // Drop leading short token if it's just initials (≤2 letters, all caps)
+        // followed by a longer word — e.g. "MV MAARTEN VAN DEN BERG".
+        if (words.length >= 3 && words[0].length <= 2) words.shift();
+        out.passengers = [titleCase(gluePassengerName(words.join(' ')))];
+        break;
+      }
+    }
+  }
+
+  // PNR — "Booking code :<PNR>" (custom render may insert spaces around colon)
+  {
+    const m = text.match(/Booking code\s*:\s*([A-Z0-9]{4,})/i);
+    if (m) out.pnr = m[1];
+  }
+
+  // Total — "Total price EUR 319 .73"  (digits may be split by space inside)
+  {
+    const m = text.match(/Total price\s+([A-Z]{3})\s*([\d][\d.,\s]*\d)/i);
+    if (m) {
+      out.currency = m[1].toUpperCase();
+      out.totalAmount = parseMoney(m[2].replace(/\s+/g, ''));
+    }
+  }
+
+  // Purchase date — first "DD/MM/YYYY, HH:MM" page-footer timestamp.
+  out.purchaseDate = parseHeaderPurchaseDate(text);
+
+  // Legs — split by weekday-prefixed long-date headers (one per leg).
+  const headerRe = /(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s*,\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/g;
+  const sections = [];
+  let mh;
+  while ((mh = headerRe.exec(text)) !== null) {
+    const mon = MONTH_MAP[mh[2].toLowerCase()];
+    if (mon == null) continue;
+    sections.push({
+      start: mh.index + mh[0].length,
+      date: new Date(Date.UTC(+mh[3], mon, +mh[1]))
+    });
+  }
+  for (let s = 0; s < sections.length; s++) {
+    const start = sections[s].start;
+    const end = s + 1 < sections.length ? sections[s + 1].start : text.length;
+    const block = text.slice(start, end);
+    // Stop at "Manage my booking" / "Total price" footers — they aren't part
+    // of the leg block.
+    const cut = block.search(/\n\s*(Manage my booking|Total price)/i);
+    const subBlock = cut > 0 ? block.slice(0, cut) : block;
+    const times = [];
+    {
+      const re = /\b(\d{1,2}):(\d{2})\b/g;
+      let m;
+      while ((m = re.exec(subBlock)) !== null) times.push(`${m[1]}:${m[2]}`);
+    }
+    const iatas = [];
+    {
+      const re = /\b([A-Z]{3})\b/g;
+      let m;
+      while ((m = re.exec(subBlock)) !== null) {
+        if (AIRPORTS[m[1]]) iatas.push(m[1]);
+      }
+    }
+    if (times.length >= 2 && iatas.length >= 2) {
+      out.legs.push({
+        flightNumber: null,
+        airline: 'KLM',
+        departureDate: sections[s].date,
+        departureTime: decimalTime(times[0]),
+        departureAirport: airportFromIATA(iatas[0]),
+        arrivalAirport: airportFromIATA(iatas[1])
+      });
+    }
   }
 
   return out;
@@ -948,6 +1096,132 @@ function extractTHYeTicket(text) {
       });
     }
     out.legs = legs;
+  }
+
+  return out;
+}
+
+// Turkish Airlines website confirmation/itinerary PDF (turkishairlines.com).
+// Distinct from the formal "Elektronik Bilet" tax invoice handled above —
+// this is what users print from "Manage my booking". Turkish-only labels.
+//   Format cues:
+//     "Türk Hava Yolları"
+//     "Rezervasyon kodu\n<PNR>"
+//     "Hava yolu - Uçuş no :TURKISH AIRLINES - TK<num>"
+//     Per-leg block: "<HH:MM>CITY, COUNTRY (IATA)\n<airport>\nHava yolu - Uçuş no..."
+//     "Toplam : <CUR> <amount>"
+function extractTHYConfirmation(text, defaultText) {
+  const { AIRPORTS } = require('./airports');
+  const out = {
+    pnr: null,
+    purchaseDate: null,
+    passengers: [],
+    legs: [],
+    totalAmount: null,
+    currency: null
+  };
+
+  // Passenger — "Bay <NAME>" / "Bayan <NAME>" (Mr./Mrs.). Prefer defaultText
+  // because the custom renderer occasionally splits surnames mid-word
+  // ("CATAL" → "CA TAL") for fonts where glyph spacing exceeds our threshold.
+  {
+    const sources = [defaultText, text].filter(Boolean);
+    for (const src of sources) {
+      const m = src.match(/\b(?:Bay|Bayan)\s+([A-ZÇĞİIÖŞÜ][A-ZÇĞİIÖŞÜ ]+?)\s*\n/);
+      if (m) {
+        out.passengers = [titleCase(m[1].trim())];
+        break;
+      }
+    }
+  }
+
+  // PNR — "Rezervasyon kodu\n<PNR>"
+  {
+    const m = text.match(/Rezervasyon kodu\s*\n\s*([A-Z0-9]{5,8})/i);
+    if (m) out.pnr = m[1];
+  }
+
+  // Purchase date — "İşlem tarihi: DD <Month> YYYY"
+  {
+    const m = text.match(/İşlem tarihi[:\s]+(\d{1,2})\s+([A-Za-zÇĞİIÖŞÜçğıöşü]+)\s+(\d{4})/i);
+    if (m) {
+      const mon = MONTH_MAP[m[2].toLowerCase()];
+      if (mon != null) out.purchaseDate = new Date(Date.UTC(+m[3], mon, +m[1]));
+    }
+  }
+
+  // Total — "Toplam : <CUR> <amount>"
+  {
+    const m = text.match(/Toplam\s*:\s*([A-Z]{3})\s*([\d.,]+)/i);
+    if (m) {
+      out.currency = m[1].toUpperCase();
+      out.totalAmount = parseMoney(m[2]);
+    }
+  }
+
+  // Flight legs — each "Hava yolu - Uçuş no :TURKISH AIRLINES - TK<num>" sits
+  // between a departure block and an arrival block, both formatted as
+  //   "<HH:MM>CITY, COUNTRY (IATA)" or "<HH:MM> CITY, COUNTRY (IATA)"
+  // We find every flight-no token and pair it with the closest preceding
+  // dep-block and the next following dep-block (which is the arrival).
+  const flightRe = /Hava yolu\s*-\s*Uçuş no\s*:[^\n]*?TURKISH AIRLINES\s*-\s*TK\s*(\d{1,5})/gi;
+  const flightMatches = [];
+  let fm;
+  while ((fm = flightRe.exec(text)) !== null) {
+    flightMatches.push({ index: fm.index, num: fm[1] });
+  }
+  // All "<HH:MM><opt-space>CITY, COUNTRY (IATA)" anchor blocks.
+  const blocks = [];
+  {
+    const re = /(\d{1,2}):(\d{2})\s*[A-ZÇĞİIÖŞÜ][A-ZÇĞİIÖŞÜa-zçğıöşü .,\-'/]*?\(([A-Z]{3})\)/g;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      if (!AIRPORTS[m[3]]) continue;
+      blocks.push({ index: m.index, time: `${m[1]}:${m[2]}`, iata: m[3] });
+    }
+  }
+  // All "<DD> <Month> <YYYY>" candidates (excluding "İşlem tarihi: ...").
+  const dateCands = [];
+  {
+    const re = /(\d{1,2})\s+([A-Za-zÇĞİIÖŞÜçğıöşü]+)\s+(\d{4})/g;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const mon = MONTH_MAP[m[2].toLowerCase()];
+      if (mon == null) continue;
+      const before = text.slice(Math.max(0, m.index - 18), m.index);
+      if (/İşlem tarihi[:\s]*$/.test(before)) continue;
+      dateCands.push({
+        index: m.index,
+        date: new Date(Date.UTC(+m[3], mon, +m[1]))
+      });
+    }
+  }
+
+  for (const fl of flightMatches) {
+    // Departure: closest preceding anchor block.
+    let dep = null;
+    for (let i = blocks.length - 1; i >= 0; i--) {
+      if (blocks[i].index < fl.index) { dep = blocks[i]; break; }
+    }
+    // Arrival: next anchor block after the flight-no token.
+    let arr = null;
+    for (let i = 0; i < blocks.length; i++) {
+      if (blocks[i].index > fl.index) { arr = blocks[i]; break; }
+    }
+    if (!dep || !arr) continue;
+    // Date: closest preceding date candidate.
+    let date = null;
+    for (let i = dateCands.length - 1; i >= 0; i--) {
+      if (dateCands[i].index < fl.index) { date = dateCands[i].date; break; }
+    }
+    out.legs.push({
+      flightNumber: `TK${fl.num}`,
+      airline: 'THY',
+      departureDate: date,
+      departureTime: decimalTime(dep.time),
+      departureAirport: airportFromIATA(dep.iata),
+      arrivalAirport: airportFromIATA(arr.iata)
+    });
   }
 
   return out;
@@ -1602,16 +1876,52 @@ function extractSunExpress(text) {
   }
 
   const legHeaders = [];
+  const seenLegIdx = new Set();
+  // Variant A: "<From> to <To>\n[Flight number: ]<CC>####"  (whitespace around "to")
+  // arr allows "/" to handle SunExpress' multi-city display ("Adana/Mersin").
   {
-    const re = /(?:^|\n)\s*([A-Za-zÇĞİIÖŞÜçğıöşü.\-' ]+?)\s+to\s+([A-Za-zÇĞİIÖŞÜçğıöşü.\-' ]+?)\s*\n\s*(?:Flight number\s*:\s*)?([A-Z]{2}|[A-Z]\d)\s?(\d{1,4})\b/g;
+    const re = /(?:^|\n)\s*([A-Za-zÇĞİIÖŞÜçğıöşü.\-' ]+?)\s+to\s+([A-Za-zÇĞİIÖŞÜçğıöşü.\-'/ ]+?)\s*\n\s*(?:Flight number\s*:\s*)?([A-Z]{2}|[A-Z]\d)\s?(\d{1,4})\b/g;
     let m;
     while ((m = re.exec(text)) !== null) {
+      const arrClean = m[2].replace(/\s+-\s+.*$/, '').trim();
       legHeaders.push({
         index: m.index,
         dep: m[1].trim(),
-        arr: m[2].trim(),
+        arr: arrClean,
         flightNumber: `${m[3].toUpperCase()}${m[4]}`
       });
+      seenLegIdx.add(m.index);
+    }
+  }
+  // Variant B: "<From>to<To>\n<CC>####"  (no whitespace around "to" — newer
+  // SunExpress format glues the cities). Restricted to a CamelCase boundary
+  // (lower-then-upper) so legitimate words like "Toronto" don't false-match.
+  {
+    const re = /(?:^|\n)\s*([A-Z][A-Za-zÇĞİIÖŞÜçğıöşü.\-' ]*?[a-zçğıöşü])to([A-ZÇĞİIÖŞÜ][A-Za-zÇĞİIÖŞÜçğıöşü.\-'/ ]*?)\s*\n\s*([A-Z]{2}|[A-Z]\d)\s?(\d{1,4})\b/g;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      if (seenLegIdx.has(m.index)) continue;
+      const arrClean = m[2].replace(/\s+-\s+.*$/, '').trim();
+      legHeaders.push({
+        index: m.index,
+        dep: m[1].trim(),
+        arr: arrClean,
+        flightNumber: `${m[3].toUpperCase()}${m[4]}`
+      });
+    }
+  }
+  legHeaders.sort((a, b) => a.index - b.index);
+
+  // Pull IATA hints from "Departure: <IATA> - <IATA>" / "Return: <IATA> -
+  // <IATA>" lines so we can map city names back to canonical airports. Both
+  // labels are required to keep round-trip directions correct — using only
+  // the outbound hint flips the return leg.
+  const depHints = [];
+  {
+    const re = /(?:Departure|Return|Outbound|Inbound)[:\s]+([A-Z]{3})\s*[-–]\s*([A-Z]{3})/gi;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      depHints.push({ index: m.index, dep: m[1], arr: m[2] });
     }
   }
 
@@ -1653,13 +1963,38 @@ function extractSunExpress(text) {
       }
     }
     const t = times[i * 2];
+    // If a "Departure: <IATA> - <IATA>" / "Return: ..." hint matches the
+    // leg's direction, use the canonical airport names from the IATA codes —
+    // produces clean values like "Cukurova" instead of
+    // "Çukurova - Adana/Mersin". Match direction (not mere proximity) so
+    // round-trip pairs don't get flipped.
+    let depAirport = lh.dep;
+    let arrAirport = lh.arr;
+    const norm = (s) => (s || '').toLowerCase()
+      .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ş/g, 's')
+      .replace(/ç/g, 'c').replace(/ö/g, 'o').replace(/ü/g, 'u')
+      .normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const sameCity = (a, b) => {
+      const na = norm(a), nb = norm(b);
+      if (!na || !nb) return false;
+      return na === nb || na.startsWith(nb) || nb.startsWith(na);
+    };
+    for (const h of depHints) {
+      const hintDepName = airportFromIATA(h.dep);
+      const hintArrName = airportFromIATA(h.arr);
+      if (sameCity(lh.dep, hintDepName) && sameCity(lh.arr, hintArrName)) {
+        depAirport = hintDepName;
+        arrAirport = hintArrName;
+        break;
+      }
+    }
     out.legs.push({
       flightNumber: lh.flightNumber,
       airline: 'SunExpress',
       departureDate: date,
       departureTime: t ? decimalTime(t.time) : null,
-      departureAirport: lh.dep,
-      arrivalAirport: lh.arr
+      departureAirport: depAirport,
+      arrivalAirport: arrAirport
     });
   }
 
@@ -1910,6 +2245,13 @@ async function parsePdf(buffer, filePath) {
   });
   const text = cleanPdfText(data.text || '');
 
+  // Also produce a "default" rendering — pdf-parse's stock layout heuristic.
+  // This avoids the mid-word splits (e.g. "CATAL" → "CA TAL") our custom
+  // gap-based join sometimes introduces, and is used by extractors that
+  // pull free-form names from the PDF.
+  const dataDefault = await pdfParse(buffer);
+  const defaultText = cleanPdfText(dataDefault.text || '');
+
   // Build visibleText excluding items in the top header-banner band
   // (typically contains hidden white-on-banner text that users can't see).
   const HEADER_BAND = 95;
@@ -1932,6 +2274,19 @@ async function parsePdf(buffer, filePath) {
     /KLM\s+(Royal Dutch Airlines|ROYAL DUTCH AIRLINES)/i.test(text)
     && /\bINVOICE\b/i.test(text)
     && /International Air Ticket/i.test(text);
+  // KLM "Trip Details" page printed from klm.com.tr — distinct from the VAT
+  // invoice. URL footer + "Booking code :" + "Total price" are reliable cues.
+  const isKLMTripDetails =
+    /klm\.com\.tr\/trip\/trip-details/i.test(text)
+    && /Booking code\s*:/i.test(text)
+    && /Total price/i.test(text);
+  // Turkish Airlines website confirmation/itinerary (turkishairlines.com).
+  // Distinct from the formal "Elektronik Bilet" tax invoice — Turkish-only
+  // labels, "Hava yolu - Uçuş no" per-leg.
+  const isTHYConfirmation =
+    /(Türk Hava Yolları|Turkish Airlines)/i.test(text)
+    && /Rezervasyon kodu/i.test(text)
+    && /Hava yolu\s*-\s*Uçuş no\s*:/i.test(text);
   // Pegasus "SALES/SATIŞ" tax-invoice PDFs — one ticket block per passenger
   // per fare component; the generic parser picks up only a single total.
   // Matches both English and Turkish variants.
@@ -2007,11 +2362,13 @@ async function parsePdf(buffer, filePath) {
   let parsed;
   if (isEurostar) parsed = extractEurostar(text);
   else if (isKLMInvoice) parsed = extractKLMInvoice(text);
+  else if (isKLMTripDetails) parsed = extractKLMTripDetails(text, defaultText);
   else if (isPegasusSales) parsed = extractPegasusSales(text);
   else if (isBrusselsAirlinesETicket) parsed = extractBrusselsAirlinesETicket(text);
   else if (isBrusselsAirlines) parsed = extractBrusselsAirlines(text);
   else if (isEurowings) parsed = extractEurowings(text);
   else if (isTHYeTicket) parsed = extractTHYeTicket(text);
+  else if (isTHYConfirmation) parsed = extractTHYConfirmation(text, defaultText);
   else if (isEasyJetPayment) parsed = extractEasyJetPayment(text);
   else if (isEasyJetBooking) parsed = extractEasyJetBooking(text);
   else if (isFinnair) parsed = extractFinnair(text);
