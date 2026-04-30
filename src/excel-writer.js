@@ -12,8 +12,11 @@ const MONTH_SHORT_EN = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ];
 
+// Always show 2 decimals so integer amounts (e.g. 255) don't render with a
+// trailing decimal separator ("255,") in locales where it doubles as the
+// decimal sign.
 const EUR_FORMAT =
-  '_-[$€-2] * #,##0.##_-;-[$€-2] * #,##0.##_-;_-[$€-2] * "-"??_-;_-@_-';
+  '_-[$€-2] * #,##0.00_-;-[$€-2] * #,##0.00_-;_-[$€-2] * "-"??_-;_-@_-';
 const DATE_FORMAT = 'dd/mm/yy';
 const TIME_FORMAT = '@'; // text — we write "HH:MM" strings
 
