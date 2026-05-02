@@ -1,8 +1,10 @@
 // Matches parsed flight/train tickets against parsed bank-statement
 // transactions using a "date AND amount mandatory" rule:
 //
-//   1. Date     - ticket.purchaseDate within +/-1 calendar day of txn.date
-//                 (REQUIRED)
+//   1. Date     - ticket.purchaseDate within +/-3 calendar days of txn.date
+//                 (REQUIRED — banks routinely post online charges 1-3 days
+//                 after the actual purchase, so we widen the window beyond
+//                 the same day).
 //   2. Amount   - amounts equal exactly, same currency (REQUIRED)
 //                 (or ticket vs txn.foreignAmount when the txn was charged in
 //                  ticket's currency - no FX conversion is performed)
@@ -12,7 +14,9 @@
 //
 // Matched iff hitDate AND hitAmount. Without an FX layer, the only safe way
 // to know two rows describe the same charge is for the bank-printed amount
-// to equal the ticket total exactly.
+// to equal the ticket total exactly. Two unrelated tickets having the same
+// amount to the cent within the same week is vanishingly unlikely, so the
+// 3-day window is a sanity guard rather than a real discriminator.
 //
 // Currency handling: we never apply an FX rate. Either the statement
 // transaction is in the same currency as the ticket (compare directly), or
@@ -52,7 +56,7 @@ function contains(haystack, needle) {
 }
 
 // Within N calendar days? Both inputs may be Date or ISO string.
-function withinDays(a, b, days = 1) {
+function withinDays(a, b, days = 3) {
   if (!a || !b) return false;
   const ad = typeof a === 'string' ? new Date(a) : a;
   const bd = typeof b === 'string' ? new Date(b) : b;
@@ -104,7 +108,7 @@ function tryAmountMatch(ticket, txn) {
 
 function scoreMatch(ticket, txn) {
   let score = 0;
-  const hitDate = withinDays(ticket.purchaseDate, txn.date, 1);
+  const hitDate = withinDays(ticket.purchaseDate, txn.date, 3);
   const hitAmount = tryAmountMatch(ticket, txn);
   const kws = airlineKeywordsForTicket(ticket);
   const hitMerchant = kws.some(k => contains(txn.description, k));
